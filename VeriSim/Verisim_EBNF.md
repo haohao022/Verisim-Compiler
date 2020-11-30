@@ -1,21 +1,21 @@
 - identifier: 
-	- ident
+	- **ident**
 - system_name:
-	- sysname
+	- **sysname**
 - real_number:
-	- realnum
+	- **realnum**
 - natural_number:
-    - natural
+    - **natural**
 - string:
-    - string
-- unary_oerator:
+    - **string**
+- unary_operator:
   - +|-|!|\~|&|\~&|  \|  | \~| | ^ | ~^ | ^~
 - binary_operator:
   - +|-|*|\|%| =\= | != | === | !\== | && | || | ** |< | <= | > |  >= | & | | | ^ | ^~ | ~^ | >> | << | >>> | <<< 
 
 ---  
 
-- translation_unit : 
+- translation_unit :               //dormouse:¶¥¼¶Ä£¿é£¬Ò»ÇĞµÄ¿ªÊ¼
   - module_declaration
 - module_declaration
   - module\_declaration module\_identifier [ **(** [list\_of\_ports|list\_of\_port\_declarations] **)** ]; **{** module\_item  **}** **endmodule**
@@ -33,7 +33,7 @@
 	- port\_identifier[ **[** constant_range_expression **]**  ] 
 - port\_declaration: 
 	- input\_declaration | output\_declaration | inout\_declaration  
-//by dormouse : æš‚ä¸æ”¯æŒinout ï¼Ÿ 
+//by dormouse : æš‚ä¸æ”¯æŒinout ï¼„1¤7 
 - module_item:
 	- port\_delaration **;**
 	- non\_port\_module\_item
@@ -41,7 +41,7 @@
 	- module\_or\_generate\_item\_declaration
 	  | local_parameter_declaration  
 	  | continuous_assign   //assignè¯­å¥  
-	  | gate_instantiation     //é—¨ç”µè·¯å®ä¾‹åŒ–ï¼Ÿ  
+	  | gate_instantiation     //é—¨ç”µè·¯å®ä¾‹åŒ–ï¼„1¤7  
 	  | module_or_udp_instantiation  // moduleå®ä¾‹åŒ–ï¼Œudpä¸æ”¯æŒï¼
 	  | initial_construct  
  	  | always_construct   
@@ -73,8 +73,8 @@
 	- net_identifier [ dimension { dimension } | **=** expression ] { **,** net_identifier [ dimension { dimension } | = expression ] }
 
 - net_declaration :
-	- net_type [ **signed** ] [ range ] list_of_net_decl_assignments_or_identifiers ;  //delay strength vector éƒ½æ— æ³•å®ç°  
-- real_declaration ï¼š
+	- net_type [ **signed** ] [ range ] list_of_net_decl_assignments_or_identifiers ;  //delay strength vector éƒ½æ— æ³•å®ç„1¤7  
+- real_declaration ï¼„1¤7
   - **real** list_of_real_identifiers ;
 
 - reg_declaration :
@@ -150,9 +150,182 @@
 - loop_generate_construct :
 	- **for** **(** genvar_initialization **;** genvar_expression **;** genvar_iteration **)** ( generate_block | module_or_generate_item )
 
+- genvar_initialization :
+    - genvar_identifier **=** constant_expression
+
+- genvar_expression :
+	- [ unary_operator ] genvar_primary genvar_expression_nlr
+- genvar_expression_nlr :
+	[ binary_operator genvar_expression genvar_expression_nlr
+	| **?** genvar_expression **:** genvar_expression genvar_expression_nlr ]
+
+- genvar_iteration :
+	- genvar_identifier **=** genvar_expression
+
+
+- genvar_primary :
+	- constant_primary
+
+- conditional_generate_construct :
+	- if_generate_construct
+	| case_generate_construct
+
+- if_generate_construct :
+     **if (** constant_expression **)** generate_block_or_null [ **else** generate_block_or_null ]
+
+
+- case_generate_construct :
+	- case **(** constant_expression **)** case_generate_item { case_generate_item } **endcase**
+
+
+- case_generate_item :
+	- constant_expression { **,** constant_expression } **:** generate_block_or_null
+| **default** [ **:** ] generate_block_or_null
+
+- generate_block :
+**begin** [ **:** generate_block_identifier ] { module_or_generate_item } **end**
+
+- generate_block_or_null :
+generate_block
+| module_or_generate_item
+| **;**
+
+- continuous_assign :
+	- **assign**  list_of_net_assignments ;
+
+- list_of_net_assignments :
+	- net_assignment { **,** net_assignment }
+
+- initial_construct :
+	- **initial** statement
+- always_construct :
+	- **always** statement
+
+- procedural_continuous_assignments :
+	- assign variable_assignment
+- variable_assignment :
+	- variable_lvalue **=** expression
+
+- seq_block :
+	- **begin** [ **:** block_identifier { block_item_declaration } ] { statement } **end**
+
+- statement :
+	- blocking_or_nonblocking_assignment_or_task_enable
+| case_statement
+| conditional_statement
+| disable_statement
+| loop_statement
+| procedural_continuous_assignments ;
+| seq_block
+| ;
+
+- statement_or_null :
+	- [ statement ]
+
+- function_statement :
+	- statement
+
+- delay_or_event_control :
+ 	- event_control
+
+- event_control :
+	- **@** ( **(** ( event_expression | **\*** ) **)** | **\*** | hierarchical_event_identifier )
+
+- event_expression :
+  - **posedge** expression event_expression_nlr |
+    expression event_expression_nlr
+- event_expression_nlr :
+	- [ **or** event_expression event_expression_nlr
+| **,** event_expression event_expression_nlr ]
+
+- conditional_statement :
+**if** **(** expression **)** statement_or_null [ **else** statement_or_null ]
+
+-  case_statement :
+**case** **(** expression **)** case_item { case_item } **endcase**
+
+- case_item :
+expression { **,** expression } **:** statement_or_null
+| **default** [ **:** ] statement_or_null
+
+- loop_statement :
+	- **for** **(** variable_assignment **;** expression **;** variable_assignment **)** statement
+
+- constant_expression :
+	- [ unary_operator ] constant_primary { constant_expression_nlr }
+
+- constant_expression_nlr:
+  - binary_operator constant_expression
+| **?** constant_expression **:** constant_expression
+
+- expression :
+	- [ unary_operator ] primary { expression_nlr }
+
+
+- expression_nlr :
+  - binary_operator expression
+| **?** expression **:** expression
+
+- lsb_constant_expression :
+	- constant_expression
+
+- constant_primary :
+	-	number
+		| string
+		| **(** constant_mintypmax_expression **)**
+		| ( identifier | system_name ) [ **[** constant_range_expression **]** | **(** constant_expression { **,** constant_expression } **)** ]
+		| **{** constant_expression [ **,** constant_expression { **,** constant_expression } | **{** constant_expression { **,** constant_expression } **}** ] **}**
+		- primary £º
+		- ( hierarchical_identifier_range | system_function_identifier ) [ **(** expression { **,** expression } **)** ]
+		| number
+		| string
+		| **(** mintypmax_expression **)**
+		| **{** expression [ **,** expression { **,** expression } | **{** expression { **,** expression } **}** ] **}**
+
+- primary :
+	- ( hierarchical_identifier_range | system_function_identifier ) [ **(** expression { **,** expression } **)** ]
+	| number
+	| string
+	| **(** mintypmax_expression **)**
+	| **{** expression [ **,** expression { **,** expression } | **{** expression { **,** expression } **}** ] **}**
+
+- net_lvalue :
+	- hierarchical_identifier_range_const
+		| **{** net_lvalue { **,** net_lvalue } **}**	
+
+- variable_lvalue :
+	- hierarchical_identifier_range
+		| **{** variable_lvalue { **,** variable_lvalue } **}**
+
+- variable_or_net_lvalue :
+	- hierarchical_identifier_range
+		| **{**variable_or_net_lvalue { **,** variable_or_net_lvalue } }
+
+
+
+- number :
+	- real_number
+	| natural_number [ based_number | base_format ( base_value | natural_number ) ]
+	| sizedbased_number
+	| based_number
+	| base_format ( base_value | natural_number )
+
+- unsigned_or_real_number :
+	number
+
+
+
+
+
+
+
+
+
+
 //DORMOUSE
-
-
+	¿¼ÂÇÈ¥µôgenvar
+	¿¼ÂÇÈ¥µôseq_blockÖĞµÄblock_identifier ±íÊö
+	¿¼ÂÇÈ¥µôconstant
 //DORMOU SE
 
 removed     
