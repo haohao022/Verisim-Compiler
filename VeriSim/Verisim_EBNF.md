@@ -9,82 +9,70 @@
 - string:
     - **string**
 - unary_operator:
-  - +|-|!|\~|&|\~&|  \|  | \~| | ^ | ~^ | ^~
+  - **+|-|!|\~|&|\~&|  \|  | \~| | ^ | ~^ | ^~**
 - binary_operator:
-  - +|-|*|\|%| =\= | != | === | !\== | && | || | ** |< | <= | > |  >= | & | | | ^ | ^~ | ~^ | >> | << | >>> | <<< 
+  - **+|-|*|\|%| =\= | != | === | !\== | && | || | ** |< | <= | > |  >= | & | | | ^ | ^~ | ~^ | >> | << | >>> | <<<** 
 
 ---  
 
 - translation_unit :               //dormouse:顶级模块，一切的开始
   - module_declaration
-- module_declaration
-  - module\_declaration module\_identifier [ **(** [list\_of\_ports|list\_of\_port\_declarations] **)** ]; **{** module\_item  **}** **endmodule**
-- module\_keyword:
-  - **module**
-- list\_of\_ports:  
+- module_declaration :   //去掉了parameter_port_list
+  - **module** module_identifier [ **(** [list_of_ports | list_of_port_declarations] **)** ] **;** { module_item  } **endmodule**
+
+- list_of_ports:  
 	- port{ **,** [port]}
-- list\_of\_port\_declarations: 
-	- port\_declaration { **,** port\_declaration }
+- list_of_port_declarations: 
+	- port_declaration { **,** port_declaration }
 - port:
-	- port\_expression | **.**port\_identifier**(** [ port_expression ] **)**
+	- port_expression | **.**port_identifier**(** [ port_expression ] **)**
 - port_expression:
-	- port\_reference | **{** port\_reference  { , port\_reference } **}**  
-- port\_reference :
-	- port\_identifier[ **[** constant_range_expression **]**  ] 
-- port\_declaration: 
-	- input\_declaration | output\_declaration | inout\_declaration  
-//by dormouse : 鏆備笉鏀寔inout 锛� 
-- module_item:
-	- port\_delaration **;**
-	- non\_port\_module\_item
-- module\_or\_generate\_item :
-	- module\_or\_generate\_item\_declaration
-	  | local_parameter_declaration  
-	  | continuous_assign   //assign璇彞  
-	  | gate_instantiation     //闂ㄧ數璺疄渚嬪寲锛�  
-	  | module_or_udp_instantiation  // module瀹炰緥鍖栵紝udp涓嶆敮鎸侊紒
+	- port_reference | **{** port_reference  { , port_reference } **}**  
+- port_reference :
+	- port_identifier[ **[** constant_range_expression **]**  ] 
+- port_declaration: 
+	- input_declaration | output_declaration | inout_declaration  
+//by dormouse : 考虑删去inout
+- module_item :
+	- port_declaration **;**
+	- non_port_module_item
+- module_or_generate_item :
+	- module_or_generate_item_declaration  
+	  | continuous_assign   //assign语句  
+	  | gate_instantiation     //门电路语句
 	  | initial_construct  
  	  | always_construct   
 	  | loop_generate_construct  
 	  | conditional_generate_construct  
 - module_or_generate_item_declaration : 
 	- net_declaration | reg_declaration | integer_declaration | real_declaration 
-	 | genvar_declaration | task_declaration 
+	 | genvar_declaration 
   
 - non_port_module_item :
 	- module_or_generate_item
 	| generate_region
-	| specify_block
-	| parameter_declaration **;**
-	| specparam_declaration
 
 - input_declaration :
-  - **input** [ net_type ] [ **signed** ] [ range ] list_of_port_identifiers
+  - **input** [ **wire** ] [ **signed** ] [ range ] list_of_port_identifiers
 
 - inout_declaration : 
-  - **inout** [ net_type ] [ **signed** ] [ range ] list_of_port_identifiers
+  - **inout** [ **wire** ] [ **signed** ] [ range ] list_of_port_identifiers
 
 - output_declaration :
-  - **output** ( [ net_type ] [ **signed** ] [ range ] list_of_port_identifiers | **reg** [ **signed** ] [ range ] list_of_variable_port_identifiers | output_variable_type list_of_variable_port_identifiers )  //output_variable_type 鍙兘鏃犳硶瀹炵幇
+  - **output** ( [ **wire** ] [ **signed** ] [ range ] list_of_port_identifiers | **reg** [ **signed** ] [ range ] list_of_variable_port_identifiers | **interger** list_of_variable_port_identifiers )  
 - integer_declaration :
-  - **integer** list_of_variable_identifiers ;
+  - **integer** list_of_variable_identifiers **;**
 
 - list_of_net_decl_assignments_or_identifiers :
-	- net_identifier [ dimension { dimension } | **=** expression ] { **,** net_identifier [ dimension { dimension } | = expression ] }
+	- net_identifier [ dimension { dimension } | **=** expression ] { **,** net_identifier [ dimension { dimension } | **=** expression ] }
 
 - net_declaration :
-	- net_type [ **signed** ] [ range ] list_of_net_decl_assignments_or_identifiers ;  //delay strength vector 閮芥棤娉曞疄鐜�  
-- real_declaration 锛�
+	- **wire** [ **signed** ] [ range ] list_of_net_decl_assignments_or_identifiers ;  //delay strength vector 去掉了
+- real_declaration :
   - **real** list_of_real_identifiers ;
 
 - reg_declaration :
-  - reg [ signed ] [ range ] list_of_variable_identifiers ;
-
-- net_type: 
-  - wire
-
-- output_variable_type :
-  - integer
+  - **reg** [ **signed** ] [ range ] list_of_variable_identifiers ;
 
 - real_type :
 	- real_identifier ( { dimension } | = constant_expression )
@@ -107,13 +95,12 @@
 - range :
 	- **[** msb_constant_expression **:** lsb_constant_expression **]**
 
-- block_item_declaration :
-	- block_reg_declaration
+- block_item_declaration :  //也许用不到，暂时删掉。语法见markdown原文
+	<!-- - block_reg_declaration
 	| block_integer_declaration
 	| local_parameter_declaration **;**
-	| parameter_declaration **;**
-- list_of_block_variable_identifiers :
-	- block_variable_type { **,** block_variable_type }  
+  - list_of_block_variable_identifiers :
+	- block_variable_type { **,** block_variable_type }   -->
 
 - gate_instantiation :
 	-   n_input_gatetype  n_input_gate_instance { **,** n_input_gate_instance } **;**
@@ -123,7 +110,12 @@
 
 - n_output_gate_instance :
 	- [ name_of_gate_instance ] **(** input_or_output_terminal { **,** input_or_output_terminal }**)**
-
+- output_terminal :
+  - net_lvalue
+- input_terminal :
+  - expression
+- input_or_output_terminal :   //expression_2 不太懂结构，也没有在本文给出
+  - expression_2   
 - name_of_gate_instance :
 	- gate_instance_identifier **[** range **]**
 
@@ -139,10 +131,10 @@
   - **not**
 
 - generate_region :
-	- **generate** { module_or_generate_item } **endgenerate**  //dormouse寰呭畾
+	- **generate** { module_or_generate_item } **endgenerate**  //dormouse也许会去掉
   
 - genvar_declaration :
-  - **genvar** list_of_genvar_identifiers **;** //dormouse寰呭畾
+  - **genvar** list_of_genvar_identifiers **;** //dormouse也许会去掉
 
 - list_of_genvar_identifiers :
 	- genvar_identifier { **,** genvar_identifier }
@@ -175,7 +167,7 @@
 
 
 - case_generate_construct :
-	- case **(** constant_expression **)** case_generate_item { case_generate_item } **endcase**
+	- **case** **(** constant_expression **)** case_generate_item { case_generate_item } **endcase**
 
 
 - case_generate_item :
@@ -195,41 +187,44 @@ generate_block
 
 - list_of_net_assignments :
 	- net_assignment { **,** net_assignment }
-
+- net_assignment :
+	- net_lvalue **=** expression
 - initial_construct :
 	- **initial** statement
 - always_construct :
 	- **always** statement
 
 - procedural_continuous_assignments :
-	- assign variable_assignment
+	- **assign** variable_assignment
 - variable_assignment :
 	- variable_lvalue **=** expression
 
 - seq_block :
 	- **begin** [ **:** block_identifier { block_item_declaration } ] { statement } **end**
-
+- blocking_or_nonblocking_assignment_or_task_enable :
+	variable_lvalue [ **(** expression { **,** expression } **)** ] [ ( **<=** | **=** ) [ delay_or_event_control ] [ expression ] ] **;**
 - statement :
 	- blocking_or_nonblocking_assignment_or_task_enable
-| case_statement
-| conditional_statement
-| disable_statement
-| loop_statement
-| procedural_continuous_assignments ;
-| seq_block
-| ;
+	| case_statement
+	| conditional_statement
+	| loop_statement
+	| procedural_continuous_assignments ;
+	| seq_block
+	| ;
 
 - statement_or_null :
 	- [ statement ]
-
-- function_statement :
-	- statement
-
 - delay_or_event_control :
  	- event_control
 
 - event_control :
 	- **@** ( **(** ( event_expression | **\*** ) **)** | **\*** | hierarchical_event_identifier )
+
+- hierarchical_event_identifier : //可能用不到，这里不给出内容，详见markdown原文
+	<!-- -hierarchical_identifier
+      - hierarchical_identifier :
+    	- identifier [ [ constant_expression ] ] { . identifier [ [ constant_expression ] ] } -->
+
 
 - event_expression :
   - **posedge** expression event_expression_nlr |
@@ -272,27 +267,31 @@ expression { **,** expression } **:** statement_or_null
 - constant_primary :
 	-	number
 		| string
-		| **(** constant_mintypmax_expression **)**
+		<!-- | **(** constant_mintypmax_expression **)** -->
 		| ( identifier | system_name ) [ **[** constant_range_expression **]** | **(** constant_expression { **,** constant_expression } **)** ]
 		| **{** constant_expression [ **,** constant_expression { **,** constant_expression } | **{** constant_expression { **,** constant_expression } **}** ] **}**
-		- primary ：
-		- ( hierarchical_identifier_range | system_function_identifier ) [ **(** expression { **,** expression } **)** ]
-		| number
-		| string
-		| **(** mintypmax_expression **)**
-		| **{** expression [ **,** expression { **,** expression } | **{** expression { **,** expression } **}** ] **}**
+
 
 - primary :
-	- ( hierarchical_identifier_range | system_function_identifier ) [ **(** expression { **,** expression } **)** ]
+	- ( hierarchical_identifier_range  ) [ **(** expression { **,** expression } **)** ]
 	| number
 	| string
-	| **(** mintypmax_expression **)**
+	<!-- | **(** mintypmax_expression **)** -->
 	| **{** expression [ **,** expression { **,** expression } | **{** expression { **,** expression } **}** ] **}**
 
+- hierarchical_identifier_range :
+	- identifier { **.** identifier [ **[** range_expression **]** ] | **[** range_expression **]** }
+
+- range_expression :
+	- expression [ **:** lsb_constant_expression ]
 - net_lvalue :
 	- hierarchical_identifier_range_const
 		| **{** net_lvalue { **,** net_lvalue } **}**	
 
+
+- hierarchical_identifier_range_const :
+	- identifier { **.** identifier [ **[** constant_range_expression **]** ] | **[** constant_range_expression **]** }
+  
 - variable_lvalue :
 	- hierarchical_identifier_range
 		| **{** variable_lvalue { **,** variable_lvalue } **}**
@@ -310,27 +309,57 @@ expression { **,** expression } **:** statement_or_null
 	| based_number
 	| base_format ( base_value | natural_number )
 
-- unsigned_or_real_number :
-	number
+- based_number :
+	- **BASEDINT**
+- base_value :
+	- **BASEVAL**
+- sizedbased_number:
+  - **SIZEVAL**
+- base_format :
+	- **BASEFMT**
 
 
+- constant_range_expression :
+	- constant_expression [ **:** lsb_constant_expression  ]
+- list_of_variable_port_identifiers :
+	- port_identifier [ **=** constant_expression ] { **,** port_identifier [ **=** constant_expression ] }
 
+- module_identifier:
+  - identifier
 
+- port_identifier : 
+  - identifier
+- net_identifier : 
+  - identifier
 
+- gate_instance_identifier :
+	- identifier
+- genvar_identifier :
+  - identifier
+- block_identifier :
+  - identifier
+- dimension_constant_expression :
+	- constant_expression
 
-
-
-
-
+- msb_constant_expression :
+	- constant_expression
+- generate_block_identifier :
+	- identifier
 //DORMOUSE
 	考虑去掉genvar
 	考虑去掉seq_block中的block_identifier 表述
 	考虑去掉constant
 //DORMOU SE
 
-removed     
-	module\_parameter\_port\_list
+//removed     
+	module_parameter_port_list
 	parameter override
 	loal_parameter_declaration
 	realtime_declaration
-	
+	module_or_udp_instantiation  // module语句或者udp实例
+	specify_block
+	parameter_declaration
+	net_type //因为只有wire
+	output_variable_type //only integer
+	constant_mintypmax_expression
+	system_function_identifier
