@@ -11,13 +11,13 @@
 - unary_operator:
   - **+|-|!|\~|&|\~&|  \|  | \~| | ^ | ~^ | ^~**
 - binary_operator:
-  - **+|-|*|\|%| =\= | != | === | !\== | && | || | ** |< | <= | > |  >= | & | | | ^ | ^~ | ~^ | >> | << | >>> | <<<** 
+  - **+|-|*|/|%| =\= | != | === | !\== | && | || | ** |< | <= | > |  >= | & | | | ^ | ^~ | ~^ | >> | << | >>> | <<<** 
 
 ---  
 
-- translation_unit :               //dormouse:¶¥¼¶Ä£¿é£¬Ò»ÇĞµÄ¿ªÊ¼
+- translation_unit :               //dormouse:é¡¶çº§æ¨¡å—ï¼Œä¸€åˆ‡çš„å¼€å§‹
   - module_declaration
-- module_declaration :   //È¥µôÁËparameter_port_list
+- module_declaration :   //å»æ‰äº†parameter_port_list
   - **module** module_identifier [ **(** [list_of_ports | list_of_port_declarations] **)** ] **;** { module_item  } **endmodule**
 
 - list_of_ports:  
@@ -32,14 +32,14 @@
 	- port_identifier[ **[** constant_range_expression **]**  ] 
 - port_declaration: 
 	- input_declaration | output_declaration | inout_declaration  
-//by dormouse : ¿¼ÂÇÉ¾È¥inout
+//by dormouse : è€ƒè™‘åˆ æ‰inout
 - module_item :
 	- port_declaration **;**
 	- non_port_module_item
 - module_or_generate_item :
 	- module_or_generate_item_declaration  
-	  | continuous_assign   //assignÓï¾ä  
-	  | gate_instantiation     //ÃÅµçÂ·Óï¾ä
+	  | continuous_assign    //assignè¯­å¥
+	  | gate_instantiation      //é—¨ç”µè·¯è¯­å¥  
 	  | initial_construct  
  	  | always_construct   
 	  | loop_generate_construct  
@@ -67,7 +67,7 @@
 	- net_identifier [ dimension { dimension } | **=** expression ] { **,** net_identifier [ dimension { dimension } | **=** expression ] }
 
 - net_declaration :
-	- **wire** [ **signed** ] [ range ] list_of_net_decl_assignments_or_identifiers ;  //delay strength vector È¥µôÁË
+	- **wire** [ **signed** ] [ range ] list_of_net_decl_assignments_or_identifiers ;  //delay strength vector å»æ‰äº†
 - real_declaration :
   - **real** list_of_real_identifiers ;
 
@@ -95,7 +95,7 @@
 - range :
 	- **[** msb_constant_expression **:** lsb_constant_expression **]**
 
-- block_item_declaration :  //Ò²ĞíÓÃ²»µ½£¬ÔİÊ±É¾µô¡£Óï·¨¼ûmarkdownÔ­ÎÄ
+- block_item_declaration :  //ä¹Ÿè®¸ç”¨ä¸åˆ°ï¼Œæš‚æ—¶åˆ æ‰ã€‚è¯­æ³•è§markdownåŸæ–‡  
 	<!-- - block_reg_declaration
 	| block_integer_declaration
 	| local_parameter_declaration **;**
@@ -114,7 +114,7 @@
   - net_lvalue
 - input_terminal :
   - expression
-- input_or_output_terminal :   //expression_2 ²»Ì«¶®½á¹¹£¬Ò²Ã»ÓĞÔÚ±¾ÎÄ¸ø³ö
+- input_or_output_terminal :   //expression_2 ä¸å¤ªæ‡‚ç»“æ„ï¼Œä¹Ÿæ²¡æœ‰åœ¨æœ¬æ–‡ç»™å‡º
   - expression_2   
 - name_of_gate_instance :
 	- gate_instance_identifier **[** range **]**
@@ -131,10 +131,10 @@
   - **not**
 
 - generate_region :
-	- **generate** { module_or_generate_item } **endgenerate**  //dormouseÒ²Ğí»áÈ¥µô
+	- **generate** { module_or_generate_item } **endgenerate**  //dormouseä¹Ÿè®¸ä¼šå»æ‰
   
 - genvar_declaration :
-  - **genvar** list_of_genvar_identifiers **;** //dormouseÒ²Ğí»áÈ¥µô
+  - **genvar** list_of_genvar_identifiers **;**  //dormouseä¹Ÿè®¸ä¼šå»æ‰
 
 - list_of_genvar_identifiers :
 	- genvar_identifier { **,** genvar_identifier }
@@ -220,7 +220,7 @@ generate_block
 - event_control :
 	- **@** ( **(** ( event_expression | **\*** ) **)** | **\*** | hierarchical_event_identifier )
 
-- hierarchical_event_identifier : //¿ÉÄÜÓÃ²»µ½£¬ÕâÀï²»¸ø³öÄÚÈİ£¬Ïê¼ûmarkdownÔ­ÎÄ
+- hierarchical_event_identifier : //å¯èƒ½ç”¨ä¸åˆ°ï¼Œè¿™é‡Œä¸ç»™å‡ºå†…å®¹ï¼Œè¯¦è§markdownåŸæ–‡
 	<!-- -hierarchical_identifier
       - hierarchical_identifier :
     	- identifier [ [ constant_expression ] ] { . identifier [ [ constant_expression ] ] } -->
@@ -346,20 +346,20 @@ expression { **,** expression } **:** statement_or_null
 - generate_block_identifier :
 	- identifier
 //DORMOUSE
-	¿¼ÂÇÈ¥µôgenvar
-	¿¼ÂÇÈ¥µôseq_blockÖĞµÄblock_identifier ±íÊö
-	¿¼ÂÇÈ¥µôconstant
-//DORMOU SE
+	è€ƒè™‘å»æ‰genvar   
+	è€ƒè™‘å»æ‰seq_blockä¸­çš„block_identifier è¡¨è¿°  
+	 è€ƒè™‘å»æ‰constant  
+//DORMOU SE  
 
 //removed     
-	module_parameter_port_list
-	parameter override
-	loal_parameter_declaration
-	realtime_declaration
-	module_or_udp_instantiation  // moduleÓï¾ä»òÕßudpÊµÀı
-	specify_block
-	parameter_declaration
-	net_type //ÒòÎªÖ»ÓĞwire
-	output_variable_type //only integer
-	constant_mintypmax_expression
-	system_function_identifier
+	module_parameter_port_list  
+	parameter override  
+	loal_parameter_declaration  
+	realtime_declaration  
+	module_or_udp_instantiation  // moduleè¯­å¥æˆ–è€…udpå®ä¾‹  
+	specify_block  
+	parameter_declaration  
+	net_type  //å› ä¸ºåªæœ‰wire  
+	output_variable_type //only integer  
+	constant_mintypmax_expression  
+	system_function_identifier  
