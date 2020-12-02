@@ -72,14 +72,27 @@ class Python2Scanner(GenericScanner):
     def t_endmarker(self, s):
         """"""
         self.add_token('ENDMARKER', s)
-
+    
+    # Combine comment and whitespace because we want to
+    # capture the space before a comment.
+    def t_whitespace_or_comment(self, s):
+        r'([ \t]*[//].*[^\x04][\n]?)|([ \t]+)'
+        # if '//' in s:
+        #     # We have a comment
+        #     matches = re.match('(\s+)(.*[\n]?)', s)
+        #     if s.endswith("\n"):
+        #         self.add_token('COMMENT', s[:-1])
+        #         self.add_token('NEWLINE', "\n")
+        #     else:
+        #         self.add_token('COMMENT', s)
+        return
     # These can a appear as unary operators. Some are also binary operators
     UNOP2NAME = {'+': 'PLUS'    , '-' : 'MINUS'    ,
                  '~': 'TILDE'   , '!' : 'not'      , '&'  : 'and'    , '|'  : 'or'  ,   '^' :'xor' ,
                 '^~':'xor_not'  , '~^': 'not_xor'  , '~|' : 'not_or' , '~&' : 'not_and' }
     #unary operator : + - ! ~ & ~& | ~| ^ ~^ ^~
     def t_op(self, s):
-        r'\+=|-=|\*=|/=|%=|&=|\|=|^=|<<=|>>=|\*\*|//=|//|==|<=|>=|<<|>>|[<>%^&+/=~-\*]'
+        r'\+=|-=|\*=|/=|%=|&=|\|=|^=|<<=|>>=|\*\*|//=|==|<=|>=|<<|>>|[<>%^&+/=~\-\*]'
         #dormouse:他这里先添加的是单目运算符。把加减之类的也认为是单目运算符
         # 在处理 <= 这一符号的时候需要尤其注意
         # Operators need to be further classified since the grammar requires this
@@ -103,7 +116,7 @@ class Python2Scanner(GenericScanner):
 
     def t_nl(self, s):
         r'\n'
-        self.add_token('NEWLINE', s )
+        # self.add_token('NEWLINE', s )
 
     def t_name(self, s):
         r'[A-Za-z_][A-Za-z_0-9]*'
@@ -136,19 +149,7 @@ class Python2Scanner(GenericScanner):
         r'(0x[0-9a-f]+|0b[01]+|0o[0-7]+|\d+\.\d|\d+)j?'
         self.add_token('NUMBER', s)
 
-    # Combine comment and whitespace because we want to
-    # capture the space before a comment.
-    def t_whitespace_or_comment(self, s):
-        r'([ \t]*[//].*[^\x04][\n]?)|([ \t]+)'
-        if '//' in s:
-            # We have a comment
-            matches = re.match('(\s+)(.*[\n]?)', s)
-            if s.endswith("\n"):
-                self.add_token('COMMENT', s[:-1])
-                self.add_token('NEWLINE', "\n")
-            else:
-                self.add_token('COMMENT', s)
-        return
+    
 
 
 if __name__ == "__main__":
@@ -162,7 +163,7 @@ if __name__ == "__main__":
         return
 
     src = open('adder.v')
-    showit(src)
+    showit(src.read())
 
     # showit("1 # hi")
 #     showit("""def foo():
