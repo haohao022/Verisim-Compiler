@@ -15,7 +15,7 @@
 
 ---  
 
-- translation_unit :               //dormouse:顶级模块，一切的开始
+- translation_unit :               //dormouse:顶级模块，一切的弢�姄1�7
   - module_declaration
 - module_declaration :   //去掉了parameter_port_list
   - **module** module_identifier [ **(** [list_of_ports | list_of_port_declarations] **)** ] **;** { module_item  } **endmodule**
@@ -25,11 +25,11 @@
 - list_of_port_declarations: 
 	- port_declaration { **,** port_declaration }
 - port:
-	- port_expression | **.**port_identifier**(** [ port_expression ] **)**
+	- port_expression | **.**port_identifier **(** [ port_expression ] **)**
 - port_expression:
 	- port_reference | **{** port_reference  { , port_reference } **}**  
 - port_reference :
-	- port_identifier[ **[** constant_range_expression **]**  ] 
+	- port_identifier[ **[** constant_range_expression **]**  ]   //�������ident���ļ�λ����
 - port_declaration: 
 	- input_declaration | output_declaration | inout_declaration  
 //by dormouse : 考虑删掉inout
@@ -39,7 +39,7 @@
 - module_or_generate_item :
 	- module_or_generate_item_declaration  
 	  | continuous_assign    //assign语句
-	  | gate_instantiation      //门电路语句  
+	  | gate_instantiation      //门电路语叄1�7  
 	  | initial_construct  
  	  | always_construct   
 	  | loop_generate_construct  
@@ -67,7 +67,7 @@
 	- net_identifier [ dimension { dimension } | **=** expression ] { **,** net_identifier [ dimension { dimension } | **=** expression ] }
 
 - net_declaration :
-	- **wire** [ **signed** ] [ range ] list_of_net_decl_assignments_or_identifiers ;  //delay strength vector 去掉了
+	- **wire** [ **signed** ] [ range ] list_of_net_decl_assignments_or_identifiers ;  //delay strength vector 去掉亄1�7
 - real_declaration :
   - **real** list_of_real_identifiers ;
 
@@ -75,19 +75,19 @@
   - **reg** [ **signed** ] [ range ] list_of_variable_identifiers ;
 
 - real_type :
-	- real_identifier ( { dimension } | = constant_expression )
+	- real_identifier ( { dimension } | **=** constant_expression )
 
 - variable_type :
-	- variable_identifier ( { dimension } | = constant_expression )
+	- variable_identifier ( { dimension } | **=** constant_expression )
 
 - list_of_port_identifiers :
-	- port_identifier { , port_identifier }
+	- port_identifier { **,** port_identifier }
 
 - list_of_real_identifiers :
-	- real_type { , real_type }
+	- real_type { **,** real_type }
 
 - list_of_variable_identifiers :
-  - port_identifier [ = constant_expression ] { , port_identifier [ = constant_expression ] }
+  - port_identifier [ **=** constant_expression ] { **,** port_identifier [ **=** constant_expression ] }
 
 - dimension :
 	- **[** dimension_constant_expression **:** dimension_constant_expression **]**
@@ -109,7 +109,7 @@
 	- [ name_of_gate_instance ] **(** output_terminal **,** input_terminal { **,** input_terminal } **)**
 
 - n_output_gate_instance :
-	- [ name_of_gate_instance ] **(** input_or_output_terminal { **,** input_or_output_terminal }**)**
+	- [ name_of_gate_instance ] **(** input_or_output_terminal { **,** input_or_output_terminal } **)**
 - output_terminal :
   - net_lvalue
 - input_terminal :
@@ -131,10 +131,10 @@
   - **not**
 
 - generate_region :
-	- **generate** { module_or_generate_item } **endgenerate**  //dormouse也许会去掉
+	- **generate** { module_or_generate_item } **endgenerate**  //dormouse也许会去掄1�7
   
 - genvar_declaration :
-  - **genvar** list_of_genvar_identifiers **;**  //dormouse也许会去掉
+  - **genvar** list_of_genvar_identifiers **;**  //dormouse也许会去掄1�7
 
 - list_of_genvar_identifiers :
 	- genvar_identifier { **,** genvar_identifier }
@@ -183,7 +183,7 @@ generate_block
 | **;**
 
 - continuous_assign :
-	- **assign**  list_of_net_assignments ;
+	- **assign**  list_of_net_assignments **;**
 
 - list_of_net_assignments :
 	- net_assignment { **,** net_assignment }
@@ -356,7 +356,7 @@ expression { **,** expression } **:** statement_or_null
 	parameter override  
 	loal_parameter_declaration  
 	realtime_declaration  
-	module_or_udp_instantiation  // module语句或者udp实例  
+	module_or_udp_instantiation  // module语句或��udp实例  
 	specify_block  
 	parameter_declaration  
 	net_type  //因为只有wire  

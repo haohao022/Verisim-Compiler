@@ -28,7 +28,7 @@ SYMBOL2NAME = {
 
 ENDMARKER = r''   # ctrl-d
 
-class Python2Scanner(GenericScanner):
+class VeriSimScanner(GenericScanner):
 
     def error(self, s, pos):
         """Show text and a carot under that. For example:
@@ -153,7 +153,7 @@ class Python2Scanner(GenericScanner):
 
 
 if __name__ == "__main__":
-    scan = Python2Scanner()
+    scan = VeriSimScanner()
 
     def showit(expr):
         print(expr)
