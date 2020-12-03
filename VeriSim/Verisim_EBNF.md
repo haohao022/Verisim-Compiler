@@ -15,7 +15,7 @@
 
 ---  
 
-- translation_unit :               //dormouse:顶级模块，一切的弢�姄1�7
+- translation_unit :               //dormouse:顶级模块，一切的开始
   - module_declaration
 - module_declaration :   //去掉了parameter_port_list
   - **module** module_identifier [ **(** [list_of_ports | list_of_port_declarations] **)** ] **;** { module_item  } **endmodule**
@@ -29,7 +29,7 @@
 - port_expression:
 	- port_reference | **{** port_reference  { , port_reference } **}**  
 - port_reference :
-	- port_identifier[ **[** constant_range_expression **]**  ]   //�������ident���ļ�λ����
+	- port_identifier[ **[** constant_range_expression **]**  ]   //�������ident���ļ�λ����
 - port_declaration: 
 	- input_declaration | output_declaration | inout_declaration  
 //by dormouse : 考虑删掉inout
@@ -39,7 +39,7 @@
 - module_or_generate_item :
 	- module_or_generate_item_declaration  
 	  | continuous_assign    //assign语句
-	  | gate_instantiation      //门电路语叄1�7  
+	  | gate_instantiation      //门电路语句  
 	  | initial_construct  
  	  | always_construct   
 	  | loop_generate_construct  
@@ -67,7 +67,7 @@
 	- net_identifier [ dimension { dimension } | **=** expression ] { **,** net_identifier [ dimension { dimension } | **=** expression ] }
 
 - net_declaration :
-	- **wire** [ **signed** ] [ range ] list_of_net_decl_assignments_or_identifiers ;  //delay strength vector 去掉亄1�7
+	- **wire** [ **signed** ] [ range ] list_of_net_decl_assignments_or_identifiers ;  //delay strength vector 去掉亄1�7
 - real_declaration :
   - **real** list_of_real_identifiers ;
 
@@ -131,10 +131,10 @@
   - **not**
 
 - generate_region :
-	- **generate** { module_or_generate_item } **endgenerate**  //dormouse也许会去掄1�7
+	- **generate** { module_or_generate_item } **endgenerate**  //dormouse也许会去掉
   
 - genvar_declaration :
-  - **genvar** list_of_genvar_identifiers **;**  //dormouse也许会去掄1�7
+  - **genvar** list_of_genvar_identifiers **;**  //dormouse也许会去掉
 
 - list_of_genvar_identifiers :
 	- genvar_identifier { **,** genvar_identifier }
@@ -356,7 +356,7 @@ expression { **,** expression } **:** statement_or_null
 	parameter override  
 	loal_parameter_declaration  
 	realtime_declaration  
-	module_or_udp_instantiation  // module语句或��udp实例  
+	module_or_udp_instantiation  // module语句或用户定义的udp实例  
 	specify_block  
 	parameter_declaration  
 	net_type  //因为只有wire  
