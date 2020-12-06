@@ -350,8 +350,8 @@ class VeriSimParser(GenericASTBuilder):
         event_expression ::= POSEDGE expression event_expression_nlr
         event_expression ::= expression event_expression_nlr
 
-        event_expression_nlr ::= OR event_expression  event_expression_nlr
-        event_expression_nlr ::=  COMMA event_expression  event_expression_nlr
+        event_expression_nlr ::=  event_expression_nlr OR event_expression
+        event_expression_nlr ::=   event_expression_nlr COMMA event_expression 
         event_expression_nlr ::= 
         conditional_statement  ::= IF LPAREN expression RPAREN statement_or_null ELSE_statement_or_null_opt
         ELSE_statement_or_null_opt ::= ELSE statement_or_null
@@ -368,16 +368,18 @@ class VeriSimParser(GenericASTBuilder):
         loop_statement ::= FOR LPAREN variable_assignment SEMICOLON expression SEMICOLON variable_assignment RPAREN statement
 
 
-        ## constant_expression ::= [ unary_operator ] constant_primary constant_expression_nlr*
-        constant_expression ::= unary_operator_opt constant_primary constant_expression_nlr*
+        
 
-        unary_operator_opt::= unary_operator?
-
-        constant_expression_nlr ::= binary_operator constant_expression
-
-        expression ::= unary_operator_opt primary  expression_nlr*
-        expression_nlr::= binary_operator expression
-        expression_nlr::=  QUES expression COLON expression
+        
+        
+        constant_expression_nlrs ::= constant_expression_nlrs binary_operator constant_expression
+        constant_expression_nlrs ::=
+        
+        expression ::= unary_operator_opt primary  expression_nlrs
+        expression_nlrs ::= expression_nlrs expression_nlr
+        expression_nlrs ::= 
+        expression_nlr ::=  binary_operator expression
+        expression_nlr ::=  QUES expression COLON expression
         lsb_constant_expression ::= constant_expression
 
         constant_primary ::= number
@@ -385,12 +387,12 @@ class VeriSimParser(GenericASTBuilder):
 
         ##dor ident_or_sysname 
         ## constant_primary ::= dor_ident_or_sysname [ LBRACKET constant_range_expression RBRACKET ]
-        constant_primary ::= dor_ident_or_sysname  LBRACKET_constant_range_expression_RBRACKET_opt 
+    #    constant_primary ::= dor_ident_or_sysname  LBRACKET_constant_range_expression_RBRACKET_opt 
         LBRACKET_constant_range_expression_RBRACKET_opt ::= LBRACKET constant_range_expression RBRACKET
         LBRACKET_constant_range_expression_RBRACKET_opt ::= 
 
         ## constant_primary ::= dor_ident_or_sysname [ LPAREN constant_expression { COMMA constant_expression } RPAREN ]
-        constant_primary ::= dor_ident_or_sysname LPAREN_constant_expression_COMMA_constant_expressions_RPAREN_opt
+    #    constant_primary ::= dor_ident_or_sysname LPAREN_constant_expression_COMMA_constant_expressions_RPAREN_opt
         LPAREN_constant_expression_COMMA_constant_expressions_RPAREN_opt ::= LPAREN constant_expression COMMA_constant_expressions RPAREN
         LPAREN_constant_expression_COMMA_constant_expressions_RPAREN_opt ::=
 
@@ -398,10 +400,10 @@ class VeriSimParser(GenericASTBuilder):
         dor_ident_or_sysname ::=  system_name
 
         ## constant_primary ::= LBRACE constant_expression [ COMMA constant_expression (COMMA constant_expression )* ] RBRACE
-        constant_primary ::= LBRACE constant_expression COMMA_constant_expression_COMMA_constant_expressions_opt RBRACE
+    #    constant_primary ::= LBRACE constant_expression COMMA_constant_expression_COMMA_constant_expressions_opt RBRACE
         COMMA_constant_expression_COMMA_constant_expressions_opt ::= COMMA constant_expression COMMA_constant_expressions
         ## constant_primary ::= LBRACE constant_expression [ LBRACE constant_expression (COMMA constant_expression )* RBRACE ] RBRACE
-        constant_primary ::= LBRACE constant_expression LBRACE_constant_expression_COMMA_constant_expressions_RBRACE_opt RBRACE
+    #    constant_primary ::= LBRACE constant_expression LBRACE_constant_expression_COMMA_constant_expressions_RBRACE_opt RBRACE
         LBRACE_constant_expression_COMMA_constant_expressions_RBRACE_opt ::= LBRACE constant_expression COMMA_constant_expressions
 
         COMMA_constant_expressions ::=  COMMA_constant_expressions COMMA constant_expression
@@ -430,7 +432,7 @@ class VeriSimParser(GenericASTBuilder):
         DOT_identifier_LBRACKET_range_expression_RBRACKET_opt_s ::= DOT_identifier_LBRACKET_range_expression_RBRACKET_opt_s DOT identifier LBRACKET_range_expression_RBRACKET_opt
         DOT_identifier_LBRACKET_range_expression_RBRACKET_opt_s ::= 
         hierarchical_identifier_range ::= identifier LBRACKET_range_expression_RBRACKETs
-        LBRACKET_range_expression_RBRACKETs::= LBRACKET_range_expression_RBRACKETs LBRACKET range_expression RBRACKET
+        LBRACKET_range_expression_RBRACKETs ::= LBRACKET_range_expression_RBRACKETs LBRACKET range_expression RBRACKET
         LBRACKET_range_expression_RBRACKET_opt ::= LBRACKET range_expression RBRACKET
 
         range_expression ::= expression COLON_lsb_constant_expression_opt
@@ -465,18 +467,18 @@ class VeriSimParser(GenericASTBuilder):
         number ::= real_number
         real_number ::= NUMBER
 
-        number ::= natural_number based_number?
-        number ::= natural_number base_format_base_value_opt
-        base_format_base_value_opt ::= base_format base_value
+        # number ::= natural_number based_number?
+        # number ::= natural_number base_format_base_value_opt
+        # base_format_base_value_opt ::= base_format base_value
 
         ##dor: now cant resolve base_value and base_number 
         ## number ::= natural_number [base_format natural_number ]
         
-        number ::= sizedbased_number
-        number ::= based_number
+        # number ::= sizedbased_number
+        # number ::= based_number
 
-        ## number ::= base_format base_value
-        number ::= base_format natural_number
+        # ## number ::= base_format base_value
+        # number ::= base_format natural_number
 
         based_number ::= NUMBER
         base_value ::= NUMBER
@@ -501,12 +503,22 @@ class VeriSimParser(GenericASTBuilder):
         genvar_identifier ::= identifier 
         block_identifier ::= identifier 
         dimension_constant_expression ::= constant_expression 
+        
         msb_constant_expression ::= constant_expression 
+        
+        
+        ## constant_expression ::= [ unary_operator ] constant_primary constant_expression_nlrs
+        constant_expression ::= unary_operator_opt constant_primary constant_expression_nlrs
+        unary_operator_opt ::= unary_operator
+        unary_operator_opt ::= 
+
+        binary_operator ::= BINOP
 
         generate_block_identifier ::= identifier
         unary_operator ::= PLUS
         unary_operator ::= MINUS
         unary_operator ::= QUES
+
         identifier ::= NAME
     '''
 
