@@ -103,6 +103,7 @@ class VeriSimScanner(GenericScanner):
         elif s in ('*', '/', '%', '&&', '||', '**' ):
             # These are  *ONLY* binary operators. Operators which are exclusively or
             # can be unary operators were handled previously
+            
             self.add_token('BINOP', s)
         elif s == '=':
             self.add_token('EQUAL', s)
@@ -145,7 +146,12 @@ class VeriSimScanner(GenericScanner):
 
     # Note we have to put longer matches earlier. Specifically radix notation and
     # fixed-point notation
+    def t_size_number(self, s):
+        # r'(0x[0-9a-f]+|0b[01]+|0o[0-7]+|\d+\.\d|\d+)j?'
+        r'(\d+\'(h[0-9a-f]+|b[01]+|o[0-7]+|d\d+))j?'
+        self.add_token('SIZE_NUMBER', s)
     def t_number(self, s):
+        # r'(0x[0-9a-f]+|0b[01]+|0o[0-7]+|\d+\.\d|\d+)j?'
         r'(0x[0-9a-f]+|0b[01]+|0o[0-7]+|\d+\.\d|\d+)j?'
         self.add_token('NUMBER', s)
 

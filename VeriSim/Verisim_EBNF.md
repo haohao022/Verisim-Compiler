@@ -273,7 +273,7 @@ expression { **,** expression } **:** statement_or_null
 
 
 - primary :
-	- ( hierarchical_identifier_range  ) [ **(** expression { **,** expression } **)** ]
+	-  hierarchical_identifier_range   [ **(** expression { **,** expression } **)** ]
 	| number
 	| string
 	<!-- | **(** mintypmax_expression **)** -->
@@ -298,7 +298,7 @@ expression { **,** expression } **:** statement_or_null
 
 - variable_or_net_lvalue :
 	- hierarchical_identifier_range
-		| **{**variable_or_net_lvalue { **,** variable_or_net_lvalue } }
+		| **{**variable_or_net_lvalue { **,** variable_or_net_lvalue } **}**
 
 
 
