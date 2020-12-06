@@ -139,9 +139,9 @@ class VeriSimParser(GenericASTBuilder):
         dor_dim_and_exp ::= dimension+
         dor_dim_and_exp ::= '=' expression
 
-        net_declaration ::= WIRE [SIGNED] [range] list_of_net_decl_assignments_or_identifiers
+        net_declaration ::= WIRE [SIGNED] [range] list_of_net_decl_assignments_or_identifiers ';'
         real_declaration ::= REAL list_of_real_identifiers
-        reg_declaration ::= REG [SIGNED] [range] list_of_variable_identifiers
+        reg_declaration ::= REG [SIGNED] [range] list_of_variable_identifiers ';'
 
         real_type ::= real_identifier dimension*
         real_type ::= real_identifier '=' constant_expression

@@ -21,7 +21,7 @@ class VeriSimParser(GenericASTBuilder):
     Note: function parse() comes from GenericASTBuilder
     """
 
-    def __init__(self, start='modult_declaration', debug=DEFAULT_DEBUG):
+    def __init__(self, start='translation_unit', debug=DEFAULT_DEBUG):
         super(VeriSimParser, self).__init__(AST, start, debug=debug)
         self.start = start
         self.debug = debug
@@ -87,8 +87,8 @@ class VeriSimParser(GenericASTBuilder):
     ##########################################################
     def p_main_module(self,args):
         '''
-        translation_unit ::= module_declaration
-        modult_declaration ::= MODULE module_identifier dor_list_of_ports_or_decla_opt_1 SEMICOLON module_item* ENDMODULE
+        translation_unit ::= module_declaration ENDMARKER
+        module_declaration ::= MODULE module_identifier dor_list_of_ports_or_decla_opt_1 SEMICOLON module_items ENDMODULE
 
         ## dor_list_of_ports_or_decla_opt_1
 
@@ -113,7 +113,7 @@ class VeriSimParser(GenericASTBuilder):
         port_opt ::= port
         port_opt ::=
         range_opt ::= range
-        #### range_opt ::= 
+        range_opt ::= 
 
         range ::= LBRACKET msb_constant_expression COLON lsb_constant_expression RBRACKET
 
@@ -149,7 +149,8 @@ class VeriSimParser(GenericASTBuilder):
 
         port_declaration ::= input_declaration
         port_declaration ::= output_declaration
-
+        module_items ::= module_items module_item
+        module_items ::= 
         module_item ::= port_declaration SEMICOLON
         module_item ::= non_port_module_item
 
@@ -162,7 +163,7 @@ class VeriSimParser(GenericASTBuilder):
         module_or_generate_item ::= conditional_generate_construct
 
         module_or_generate_item_declaration ::= net_declaration
-        module_or_generate_item_declaration ::= reg_declaration
+        module_or_generate_item_declaration ::= reg_declaration 
         module_or_generate_item_declaration ::= integer_declaration
         module_or_generate_item_declaration ::= real_declaration
         module_or_generate_item_declaration ::= genvar_declaration
@@ -191,10 +192,10 @@ class VeriSimParser(GenericASTBuilder):
         dor_dim_and_exp ::= dimension+
         dor_dim_and_exp ::= IS_EQUAL expression
 
-        net_declaration ::= WIRE SIGNED? range_opt list_of_net_decl_assignments_or_identifiers
+        net_declaration ::= WIRE signed_opt range_opt list_of_net_decl_assignments_or_identifiers SEMICOLON
 
         real_declaration ::= REAL list_of_real_identifiers
-        reg_declaration ::= REG SIGNED? range_opt list_of_variable_identifiers
+        reg_declaration ::= REG signed_opt range_opt list_of_variable_identifiers SEMICOLON
 
         real_type ::= real_identifier dimension*
 
@@ -211,10 +212,12 @@ class VeriSimParser(GenericASTBuilder):
         COMMA_real_types ::= COMMA_real_types COMMA real_type
         ###(COMMA port_identifier [IS_EQUAL constant_expression])*
         list_of_variable_identifiers ::= port_identifier IS_EQUAL_constant_expression_opt COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s
+
+        
         IS_EQUAL_constant_expression_opt ::= IS_EQUAL constant_expression
         COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s ::= COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s COMMA port_identifier  IS_EQUAL_constant_expression_opt
         COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s ::= 
-        IS_EQUAL_constant_expression_opt ::= IS_EQUAL constant_expression
+
         IS_EQUAL_constant_expression_opt ::=
 
 
@@ -387,12 +390,12 @@ class VeriSimParser(GenericASTBuilder):
 
         ##dor ident_or_sysname 
         ## constant_primary ::= dor_ident_or_sysname [ LBRACKET constant_range_expression RBRACKET ]
-    #    constant_primary ::= dor_ident_or_sysname  LBRACKET_constant_range_expression_RBRACKET_opt 
+        constant_primary ::= dor_ident_or_sysname  LBRACKET_constant_range_expression_RBRACKET_opt 
         LBRACKET_constant_range_expression_RBRACKET_opt ::= LBRACKET constant_range_expression RBRACKET
         LBRACKET_constant_range_expression_RBRACKET_opt ::= 
 
         ## constant_primary ::= dor_ident_or_sysname [ LPAREN constant_expression { COMMA constant_expression } RPAREN ]
-    #    constant_primary ::= dor_ident_or_sysname LPAREN_constant_expression_COMMA_constant_expressions_RPAREN_opt
+        constant_primary ::= dor_ident_or_sysname LPAREN_constant_expression_COMMA_constant_expressions_RPAREN_opt
         LPAREN_constant_expression_COMMA_constant_expressions_RPAREN_opt ::= LPAREN constant_expression COMMA_constant_expressions RPAREN
         LPAREN_constant_expression_COMMA_constant_expressions_RPAREN_opt ::=
 
@@ -400,10 +403,10 @@ class VeriSimParser(GenericASTBuilder):
         dor_ident_or_sysname ::=  system_name
 
         ## constant_primary ::= LBRACE constant_expression [ COMMA constant_expression (COMMA constant_expression )* ] RBRACE
-    #    constant_primary ::= LBRACE constant_expression COMMA_constant_expression_COMMA_constant_expressions_opt RBRACE
+        constant_primary ::= LBRACE constant_expression COMMA_constant_expression_COMMA_constant_expressions_opt RBRACE
         COMMA_constant_expression_COMMA_constant_expressions_opt ::= COMMA constant_expression COMMA_constant_expressions
         ## constant_primary ::= LBRACE constant_expression [ LBRACE constant_expression (COMMA constant_expression )* RBRACE ] RBRACE
-    #    constant_primary ::= LBRACE constant_expression LBRACE_constant_expression_COMMA_constant_expressions_RBRACE_opt RBRACE
+        constant_primary ::= LBRACE constant_expression LBRACE_constant_expression_COMMA_constant_expressions_RBRACE_opt RBRACE
         LBRACE_constant_expression_COMMA_constant_expressions_RBRACE_opt ::= LBRACE constant_expression COMMA_constant_expressions
 
         COMMA_constant_expressions ::=  COMMA_constant_expressions COMMA constant_expression
@@ -524,7 +527,7 @@ class VeriSimParser(GenericASTBuilder):
 
 
 
-def parse_VeriSim(VeriSim_tokens, start='modult_declaration',
+def parse_VeriSim(VeriSim_tokens, start='translation_unit',
                   show_tokens=False, parser_debug=DEFAULT_DEBUG, check=False):
     assert isinstance(VeriSim_tokens, list)
     if show_tokens:
@@ -551,7 +554,7 @@ if __name__ == '__main__':
     #         print(python2_stmts)
     #         print('-' * 30)
     #         ast = parse_VeriSim(python2_stmts + ENDMARKER,
-    #                             start='modult_declaration', show_tokens=False, check=True)
+    #                             start='translation_unit', show_tokens=False, check=True)
     #         print(ast)
     #         print(IS_EQUAL * 30)
     # else:
@@ -560,6 +563,6 @@ if __name__ == '__main__':
     src = open('adder.v')
     scan = VeriSimScanner()
     tokens = scan.tokenize(src.read() + ENDMARKER)
-    ast = parse_VeriSim(tokens, start='modult_declaration', show_tokens=False, check=True)
+    ast = parse_VeriSim(tokens, start='translation_unit', show_tokens=False, check=True)
 
     print("DORMOUSE+==========+end")

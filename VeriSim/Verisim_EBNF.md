@@ -67,12 +67,12 @@
 	- net_identifier [ dimension { dimension } | **=** expression ] { **,** net_identifier [ dimension { dimension } | **=** expression ] }
 
 - net_declaration :
-	- **wire** [ **signed** ] [ range ] list_of_net_decl_assignments_or_identifiers ;  //delay strength vector 去掉亄1�7
+	- **wire** [ **signed** ] [ range ] list_of_net_decl_assignments_or_identifiers **;**  //delay strength vector 去掉亄1�7
 - real_declaration :
-  - **real** list_of_real_identifiers ;
+  - **real** list_of_real_identifiers **;**
 
 - reg_declaration :
-  - **reg** [ **signed** ] [ range ] list_of_variable_identifiers ;
+  - **reg** [ **signed** ] [ range ] list_of_variable_identifiers **;**
 
 - real_type :
 	- real_identifier ( { dimension } | **=** constant_expression )
