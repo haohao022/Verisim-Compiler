@@ -279,7 +279,7 @@ class VeriSimParser(GenericASTBuilder):
 
         primary ::= '{' expression [ '{' expression (',' expression)* '}' ] '}'
 
-        hierarchical_identifier_range ::= identifier ()'.' identifier [ '[' range_expression ']' ])*
+        hierarchical_identifier_range ::= identifier ('.' identifier [ '[' range_expression ']' ])*
         hierarchical_identifier_range ::= identifier  ('[' range_expression ']')*
 
         range_expression ::= expression [ ':' lsb_constant_expression ]

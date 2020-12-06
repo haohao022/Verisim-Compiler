@@ -87,12 +87,12 @@ class VeriSimScanner(GenericScanner):
         #         self.add_token('COMMENT', s)
         return
     # These can a appear as unary operators. Some are also binary operators
-    UNOP2NAME = {'+': 'PLUS'    , '-' : 'MINUS'    ,
-                 '~': 'TILDE'   , '!' : 'not'      , '&'  : 'and'    , '|'  : 'or'  ,   '^' :'xor' ,
+    UNOP2NAME = {'+': 'PLUS'    , '-' : 'MINUS'    , '?' :'QUES' ,
+                 '~': 'TILDE'   , '!' : 'NOT'      , '&'  : 'AND'    , '|'  : 'OR'  ,   '^' :'xor' ,
                 '^~':'xor_not'  , '~^': 'not_xor'  , '~|' : 'not_or' , '~&' : 'not_and' }
     #unary operator : + - ! ~ & ~& | ~| ^ ~^ ^~
     def t_op(self, s):
-        r'\+=|-=|\*=|/=|%=|&=|\|=|^=|<<=|>>=|\*\*|//=|==|<=|>=|<<|>>|[<>%^&+/=~\-\*]'
+        r'\+=|-=|\*=|/=|%=|&=|\|=|^=|<<=|>>=|\*\*|//=|==|<=|>=|<<|>>|[<>%^&\?+/=~\-\*]'
         #dormouse:他这里先添加的是单目运算符。把加减之类的也认为是单目运算符
         # 在处理 <= 这一符号的时候需要尤其注意
         # Operators need to be further classified since the grammar requires this
@@ -103,10 +103,10 @@ class VeriSimScanner(GenericScanner):
         elif s in ('*', '/', '%', '&&', '||', '**' ):
             # These are  *ONLY* binary operators. Operators which are exclusively or
             # can be unary operators were handled previously
-            
+
             self.add_token('BINOP', s)
         elif s == '=':
-            self.add_token('EQUAL', s)
+            self.add_token('IS_EQUAL', s)
         else:
             print("Internal error: Unknown operator %s" % s)
             raise SystemExit
