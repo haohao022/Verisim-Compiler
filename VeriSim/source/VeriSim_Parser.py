@@ -314,22 +314,33 @@ class VeriSimParser(GenericASTBuilder):
         procedural_continuous_assignments ::= ASSIGN variable_assignment
         variable_assignment ::= variable_lvalue IS_EQUAL expression
         ## [COLON block_identifier block_item_declaration* ]
-        seq_block ::= BEGIN COLON_block_identifier_block_item_declarations_opt statement* END
-        COLON_block_identifier_block_item_declarations_opt ::= COLON block_identifier block_item_declaration*
-        COLON block_identifier block_item_declarations_opt ::= 
+        seq_block ::= BEGIN COLON_block_identifier_block_item_declarations_opt statements END
+
+        statements ::= statements statement
+        statements ::= 
+
+        COLON_block_identifier_block_item_declarations_opt ::= COLON block_identifier block_item_declarations
+        COLON_block_identifier_block_item_declarations_opt ::= 
+
+        block_item_declarations ::= block_item_declarations block_item_declaration
+        block_item_declarations ::= 
 
         ##!!! great ->    [LPAREN expression (COMMA expression)*   RPAREN] ['<=' [delay_or_event_control] [expression] ] 
         blocking_or_nonblocking_assignment_or_task_enable ::= variable_lvalue great1_opt great2_opt SEMICOLON
-        great1 ::= LPAREN expression COMMA_expressions   RPAREN
+        great1_opt ::= LPAREN expression COMMA_expressions   RPAREN
         COMMA_expressions ::= COMMA_expressions COMMA expression
         COMMA_expressions ::= 
-        great1 ::= 
+        great1_opt ::= 
 
 
-        ##dor COMP_OP MUSTbe '<='
-        great2 ::= COMP_OP delay_or_event_control? expression?
-        great2 ::= 
+        ##dor COMP_OP MUSTbe '<=' ?
+        great2_opt ::= COMP_OP delay_or_event_control_opt expression_opt
+        great2_opt ::= IS_EQUAL delay_or_event_control_opt expression_opt
+        great2_opt ::= 
 
+        expression_opt ::= expression?
+
+        delay_or_event_control_opt ::= delay_or_event_control?
 
         statement ::= blocking_or_nonblocking_assignment_or_task_enable
         statement ::= case_statement
@@ -338,6 +349,11 @@ class VeriSimParser(GenericASTBuilder):
         statement ::= procedural_continuous_assignments SEMICOLON
         statement ::= seq_block
         statement ::= SEMICOLON
+
+        statement ::= procedural_timing_control_statement
+        procedural_timing_control_statement ::= event_control statement_or_null
+
+
 
         statement_or_null ::= statement?
         delay_or_event_control ::=  event_control
@@ -429,14 +445,15 @@ class VeriSimParser(GenericASTBuilder):
         LBRACE_expression_COMMA_expressions_RBRACE_opt ::= LBRACE expression COMMA_expressions RBRACE
         LBRACE_expression_COMMA_expressions_RBRACE_opt ::= 
 
-        ## hierarchical_identifier_range ::= identifier ( DOT identifier [ LBRACKET range_expression RBRACKET ])*
-        hierarchical_identifier_range ::= identifier DOT_identifier_LBRACKET_range_expression_RBRACKET_opt_s
+        ## hierarchical_identifier_range ::= identifier ( DOT identifier [ LBRACKET range_expression RBRACKET ]  |  LBRACKET range_expression RBRACKET   )*
+        hierarchical_identifier_range ::= identifier great3_opt_s 
+        great3_opt_s ::= great3_opt_s great3_opt_chosen
+        great3_opt_s ::= 
+        great3_opt_chosen ::= LBRACKET range_expression RBRACKET
+        great3_opt_chosen ::= DOT identifier LBRACKET_range_expression_RBRACKET_opt
 
-        DOT_identifier_LBRACKET_range_expression_RBRACKET_opt_s ::= DOT_identifier_LBRACKET_range_expression_RBRACKET_opt_s DOT identifier LBRACKET_range_expression_RBRACKET_opt
-        DOT_identifier_LBRACKET_range_expression_RBRACKET_opt_s ::= 
-        hierarchical_identifier_range ::= identifier LBRACKET_range_expression_RBRACKETs
-        LBRACKET_range_expression_RBRACKETs ::= LBRACKET_range_expression_RBRACKETs LBRACKET range_expression RBRACKET
         LBRACKET_range_expression_RBRACKET_opt ::= LBRACKET range_expression RBRACKET
+        LBRACKET_range_expression_RBRACKET_opt ::=
 
         range_expression ::= expression COLON_lsb_constant_expression_opt
         COLON_lsb_constant_expression_opt ::= COLON lsb_constant_expression
@@ -445,7 +462,8 @@ class VeriSimParser(GenericASTBuilder):
 
         net_lvalue ::= LBRACE net_lvalue COMMA_net_lvalues RBRACE	
         COMMA_net_lvalues ::= COMMA_net_lvalues COMMA net_lvalue
-
+        COMMA_net_lvalues ::= 
+        
         ## hierarchical_identifier_range_const ::= identifier (DOT identifier [ LBRACKET constant_range_expression RBRACKET ] )*
         hierarchical_identifier_range_const ::= identifier DOT_identifier_LBRACKET_constant_range_expression_RBRACKET_opt_s
         DOT_identifier_LBRACKET_constant_range_expression_RBRACKET_opt_s ::= DOT_identifier_LBRACKET_constant_range_expression_RBRACKET_opt_s DOT identifier LBRACKET_constant_range_expression_RBRACKET_opt
@@ -516,6 +534,8 @@ class VeriSimParser(GenericASTBuilder):
         unary_operator_opt ::= 
 
         binary_operator ::= BINOP
+        binary_operator ::= PLUS
+        binary_operator ::= MINUS
 
         generate_block_identifier ::= identifier
         unary_operator ::= PLUS
