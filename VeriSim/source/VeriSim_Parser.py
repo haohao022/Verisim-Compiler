@@ -10,19 +10,21 @@ from spark_parser.ast import AST
 
 from VeriSim_Scanner import VeriSimScanner, ENDMARKER
 
-from spark_parser import GenericASTBuilder
+from spark_parser.scanner import GenericScanner, GenericToken
+from spark_parser import GenericParser
 
-DEFAULT_DEBUG = {'rules': False, 'transition': False, 'reduce' : False,
+DEFAULT_DEBUG = {'rules': False, 'transition': False, 'reduce' : True,
                  'errorstack': 'full', 'context': False, 'dups': False}
-
-class VeriSimParser(GenericASTBuilder):
+# class VeriSimParser(GenericASTBuilder):
+class VeriSimParser(GenericParser):
     """A more complete spark example: a Python 2 Parser.
 
     Note: function parse() comes from GenericASTBuilder
     """
 
     def __init__(self, start='translation_unit', debug=DEFAULT_DEBUG):
-        super(VeriSimParser, self).__init__(AST, start, debug=debug)
+    #    super(VeriSimParser, self).__init__(AST, start, debug=debug)
+        GenericParser.__init__(self,start, debug)
         self.start = start
         self.debug = debug
 
@@ -88,20 +90,7 @@ class VeriSimParser(GenericASTBuilder):
     def p_main_module(self,args):
         '''
         translation_unit ::= module_declaration ENDMARKER
-        module_declaration ::= MODULE module_identifier dor_list_of_ports_or_decla_opt_1 SEMICOLON module_items ENDMODULE
-
-        ## dor_list_of_ports_or_decla_opt_1
-
-        dor_list_of_ports_or_decla_opt_1 ::= LPAREN dor_list_of_ports_or_decla_opt_2 RPAREN
-        dor_list_of_ports_or_decla_opt_1 ::=
-        dor_list_of_ports_or_decla_opt_2 ::= dor_list_of_ports_or_decla
-        dor_list_of_ports_or_decla_opt_2 ::=
-        dor_list_of_ports_or_decla ::= list_of_ports
-        dor_list_of_ports_or_decla ::= list_of_port_declarations
         
-
-
-
         ## 这里的port真的需要左右有中括号吗？ list_of_ports ::= port (COMMA [port])*
         ## new comma_ports_opt
         list_of_ports ::= port comma_ports_opt
@@ -112,10 +101,9 @@ class VeriSimParser(GenericASTBuilder):
 
         port_opt ::= port
         port_opt ::=
-        range_opt ::= range
-        range_opt ::= 
+        
 
-        range ::= LBRACKET msb_constant_expression COLON lsb_constant_expression RBRACKET
+        
 
         ## list_of_port_declarations ::= port_declaration (COMMA port_declaration)*
         ## comma_port_declarations 
@@ -123,14 +111,67 @@ class VeriSimParser(GenericASTBuilder):
         comma_port_declarations ::= comma_port_declarations COMMA port_declaration
         comma_port_declarations ::= 
         '''
-        # node_i = ( 'MODULE' ,args[1]) 
+        pass
+
+    def p_module_dec(self,args):
+        '''
+        module_declaration ::= MODULE module_identifier dor_list_of_ports_or_decla_opt_1 SEMICOLON module_items ENDMODULE
+        '''
+        tmp = AST('MODULE' , [args[1] ,args[2],args[4]] )  
+        return tmp
         
-        # return AST('MODULE',[args[1]])
+    def p_port_output_decla(self,args):
+        '''
+        output_declaration ::= OUTPUT wire_opt signed_opt range_opt list_of_port_identifiers
+        output_declaration ::= OUTPUT REG signed_opt range_opt list_of_variable_port_identifiers
+        output_declaration ::= OUTPUT INTEGER list_of_variable_port_identifiers
+        '''
+        ## this should be edit
+        tmp = AST('OUTPUT',[args[3],args[4]] )
+        return tmp
+    
+    def p_port_range_decla(self,args):
+        '''
+        range_opt ::= range
+        range_opt ::= 
+        '''
+        tmp = None
+        if len(args) ==0 :
+            tmp = AST('WIDTH', [1] )
+        else :
+            tmp = AST('WIDTH', [args[0]])
+        return tmp
+
+
+    def p_range_decla(self,args):
+        '''
+        range ::= LBRACKET msb_constant_expression COLON lsb_constant_expression RBRACKET
+        '''
+        tmp =  AST('RANGE' , [args[1] , args[3]])
+        return tmp
+
+    def p_constant_pri_1(self,args):
+        '''
+        constant_primary ::= number
+        number ::= real_number
+        real_number ::= NUMBER
+        '''
+        tmp = AST('NUMBER', [args[0]])
+        return tmp
+
 
 
     def p_python_grammar(self, args):
         ''' 
-        
+        ## dor_list_of_ports_or_decla_opt_1
+        dor_list_of_ports_or_decla_opt_1 ::= LPAREN dor_list_of_ports_or_decla_opt_2 RPAREN
+        dor_list_of_ports_or_decla_opt_1 ::=
+        dor_list_of_ports_or_decla_opt_2 ::= dor_list_of_ports_or_decla
+        dor_list_of_ports_or_decla_opt_2 ::=
+        dor_list_of_ports_or_decla ::= list_of_ports
+        dor_list_of_ports_or_decla ::= list_of_port_declarations
+
+
         port_expression_opt ::= port_expression?
 
         port_expression ::= port_reference
@@ -176,9 +217,7 @@ class VeriSimParser(GenericASTBuilder):
         signed_opt ::= SIGNED?
         
 
-        output_declaration ::= OUTPUT wire_opt signed_opt range_opt list_of_port_identifiers
-        output_declaration ::= OUTPUT REG signed_opt range_opt list_of_variable_port_identifiers
-        output_declaration ::= OUTPUT INTEGER list_of_variable_port_identifiers
+        
 
         integer_declaration ::= INTEGER list_of_variable_identifiers SEMICOLON
 
@@ -353,8 +392,6 @@ class VeriSimParser(GenericASTBuilder):
         statement ::= procedural_timing_control_statement
         procedural_timing_control_statement ::= event_control statement_or_null
 
-
-
         statement_or_null ::= statement?
         delay_or_event_control ::=  event_control
 
@@ -384,12 +421,7 @@ class VeriSimParser(GenericASTBuilder):
 
         case_item ::= DEFAULT COLON? statement_or_null
 
-        loop_statement ::= FOR LPAREN variable_assignment SEMICOLON expression SEMICOLON variable_assignment RPAREN statement
-
-
-        
-
-        
+        loop_statement ::= FOR LPAREN variable_assignment SEMICOLON expression SEMICOLON variable_assignment RPAREN statement   
         
         constant_expression_nlrs ::= constant_expression_nlrs binary_operator constant_expression
         constant_expression_nlrs ::=
@@ -401,7 +433,7 @@ class VeriSimParser(GenericASTBuilder):
         expression_nlr ::=  QUES expression COLON expression
         lsb_constant_expression ::= constant_expression
 
-        constant_primary ::= number
+        
         ### constant_primary ::= string
 
         ##dor ident_or_sysname 
@@ -463,7 +495,7 @@ class VeriSimParser(GenericASTBuilder):
         net_lvalue ::= LBRACE net_lvalue COMMA_net_lvalues RBRACE	
         COMMA_net_lvalues ::= COMMA_net_lvalues COMMA net_lvalue
         COMMA_net_lvalues ::= 
-        
+
         ## hierarchical_identifier_range_const ::= identifier (DOT identifier [ LBRACKET constant_range_expression RBRACKET ] )*
         hierarchical_identifier_range_const ::= identifier DOT_identifier_LBRACKET_constant_range_expression_RBRACKET_opt_s
         DOT_identifier_LBRACKET_constant_range_expression_RBRACKET_opt_s ::= DOT_identifier_LBRACKET_constant_range_expression_RBRACKET_opt_s DOT identifier LBRACKET_constant_range_expression_RBRACKET_opt
@@ -485,8 +517,7 @@ class VeriSimParser(GenericASTBuilder):
         COMMA_variable_or_net_lvalues ::= COMMA_variable_or_net_lvalues COMMA variable_or_net_lvalue
         COMMA_variable_or_net_lvalues ::=
 
-        number ::= real_number
-        real_number ::= NUMBER
+        
 
         # number ::= natural_number based_number?
         # number ::= natural_number base_format_base_value_opt

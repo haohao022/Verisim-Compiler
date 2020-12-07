@@ -14,10 +14,11 @@ class AstNode(GenericToken):
         pass
 
 
-class VeriSimAst(GenericToken):
+class Signal_table:
 
     def __init__(self):
         self.rv = []
+        
 
     def __str__(self):
         return 'Token %s: %r ' %( self.kind, self.attr)
