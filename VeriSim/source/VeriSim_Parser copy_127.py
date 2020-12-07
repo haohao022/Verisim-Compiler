@@ -100,61 +100,10 @@ class VeriSimParser(GenericParser):
         tmp = AST('MODULE' , [args[1] ,args[2],args[4]] )  
         return tmp
 
-    def p_module_dec_1(self,args):
-        '''
-        ## dor_list_of_ports_or_decla_opt_1
-        dor_list_of_ports_or_decla_opt_1 ::= LPAREN dor_list_of_ports_or_decla_opt_2 RPAREN
-        dor_list_of_ports_or_decla_opt_1 ::=
-        '''
-        if len(args)!=0 and args[1] != None :
-           return AST('single', [args[1]]) 
-        pass
-
-    def p_module_dec_2(self,args):
-        '''
-        dor_list_of_ports_or_decla_opt_2 ::= dor_list_of_ports_or_decla
-        dor_list_of_ports_or_decla_opt_2 ::=
-        '''
-        if len(args)!=0 and args[0] != None :
-           return AST('single', [args[0]]) 
-
-        pass
-
-    def p_module_dec_3(self,args):
-        '''
-        dor_list_of_ports_or_decla ::= list_of_ports
-        dor_list_of_ports_or_decla ::= list_of_port_declarations
-        '''
-        return AST('single',[args[0]])
-###dor
-
-    
-
-    def p_list_of_ports(self,args):
-        '''
-        ## 这里的port真的需要左右有中括号吗？ list_of_ports ::= port (COMMA [port])*
-        ## new comma_port_opt_s
-        list_of_ports ::= port comma_port_opt_s
-        '''
-        return AST('PORTs', [args[0],args[1]])
-
-        
-    def p_module_dec_4(self,args):
-        '''
-        comma_port_opt_s ::= comma_port_opt_s COMMA port_opt 
-        comma_port_opt_s ::= 
-        '''
-        if len(args) !=0:
-            return AST('single',[args[2]] )
-        pass
-
     def p_port_decla(self,args):
         '''
         module_identifier ::= identifier 
-        port_identifier ::= identifier
         '''
-        return AST('NAME' ,args[0])
-        
 
 
     def p_port_output_decla(self,args):
@@ -196,44 +145,19 @@ class VeriSimParser(GenericParser):
         tmp = AST('NUMBER', [args[0]])
         return tmp
 
-    def p_port(self,args):
-        '''
-        port ::= port_expression
-        port ::= DOT port_identifier LPAREN port_expression_opt RPAREN
-        '''
-        if len(args) == 1 :
-            return AST('PORT', [args[0]])
-        else :
-            return AST('PORT',[None])
-        
-    def p_port_expression(self,args):
-        '''
-        port_expression ::= port_reference
-        port_expression ::= LBRACE port_reference  comma_port_references RBRACE 
-        '''
-        if len(args) ==1 :
-            return AST('single',[args[0]])
-        else :
-            return AST('PORT_COMBINE',[args[1],args[2]])
 
-    def p_port_reference(self,args):
-        '''
-        ##  port_reference ::= port_identifier ['['constant_range_expression']']
-        port_reference ::= port_identifier LBRACKET_constant_range_expression_RBRACKET_opt 
-        '''
-        return AST('port_reference', [args[0],args[1]] )
-        
-    def p_port_ref_1(self,args):
-        '''
-        LBRACKET_constant_range_expression_RBRACKET_opt ::= LBRACKET constant_range_expression RBRACKET
-        LBRACKET_constant_range_expression_RBRACKET_opt ::=
-        '''
-        if len(args) >0 :
-            return AST('single',[args[0]])
-        pass
 
     def p_python_grammar(self, args):
         ''' 
+
+            
+        ## 这里的port真的需要左右有中括号吗？ list_of_ports ::= port (COMMA [port])*
+        ## new comma_ports_opt
+        list_of_ports ::= port comma_ports_opt
+        comma_ports_opt ::= comma_port_opt COMMA port_opt 
+
+        port ::= port_expression
+        port ::= DOT port_identifier LPAREN port_expression_opt RPAREN
 
         port_opt ::= port
         port_opt ::=
@@ -245,17 +169,30 @@ class VeriSimParser(GenericParser):
         comma_port_declarations ::= 
 
 
+        ## dor_list_of_ports_or_decla_opt_1
+        dor_list_of_ports_or_decla_opt_1 ::= LPAREN dor_list_of_ports_or_decla_opt_2 RPAREN
+        dor_list_of_ports_or_decla_opt_1 ::=
+        dor_list_of_ports_or_decla_opt_2 ::= dor_list_of_ports_or_decla
+        dor_list_of_ports_or_decla_opt_2 ::=
+        dor_list_of_ports_or_decla ::= list_of_ports
+        dor_list_of_ports_or_decla ::= list_of_port_declarations
+
+
         port_expression_opt ::= port_expression?
 
-        
+        port_expression ::= port_reference
+        port_expression ::= LBRACE port_reference  comma_port_references RBRACE 
 
         ## (COMMA port_reference)*
         comma_port_references ::= comma_port_references COMMA port_reference
         comma_port_references ::=
 
-        
+        ##  port_reference ::= port_identifier ['['constant_range_expression']']
 
+        port_reference ::= port_identifier LBRACKET_constant_range_expression_RBRACKET_opt 
 
+        LBRACKET_constant_range_expression_RBRACKET_opt ::= LBRACKET constant_range_expression RBRACKET
+        LBRACKET_constant_range_expression_RBRACKET_opt ::=
 
         port_declaration ::= input_declaration
         port_declaration ::= output_declaration
@@ -607,7 +544,7 @@ class VeriSimParser(GenericParser):
         sizedbased_number ::= SIZE_NUMBER
         base_format ::= SIZE_NUMBER
 
-        
+        constant_range_expression ::= constant_expression COLON_lsb_constant_expression_opt
 
         ## list_of_variable_port_identifiers ::= port_identifier [ IS_EQUAL constant_expression ]  (COMMA port_identifier [ IS_EQUAL constant_expression ])*
         list_of_variable_port_identifiers ::= port_identifier IS_EQUAL_constant_expression_opt COMMA_port_identifier_IS_EQUAL_constant_expression_opts
@@ -618,7 +555,7 @@ class VeriSimParser(GenericParser):
 
 
         
-        
+        port_identifier ::= identifier
         net_identifier ::= identifier 
         gate_instance_identifier ::= identifier 
         genvar_identifier ::= identifier 
