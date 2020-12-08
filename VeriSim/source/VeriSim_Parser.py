@@ -4,7 +4,6 @@ More complex expression parsing
 """
 
 # from __future__ import print_function
-
 import sys
 from spark_parser.ast import AST
 
@@ -27,7 +26,7 @@ class VeriSimParser(GenericParser):
         GenericParser.__init__(self,start, debug)
         self.start = start
         self.debug = debug
-
+        
         # Put left-recursive list non-terminals:
         # x ::= x y
         # x ::=
@@ -196,7 +195,7 @@ class VeriSimParser(GenericParser):
         '''
         tmp = None
         if len(args) ==0 :
-            tmp = AST('WIDTH', [1] )
+            tmp = AST('WIDTH', [None] )
         else :
             tmp = AST('WIDTH', [args[0]])
         return tmp
@@ -290,8 +289,10 @@ class VeriSimParser(GenericParser):
         ## constant_expression ::= [ unary_operator ] constant_primary constant_expression_nlrs
         constant_expression ::= unary_operator_opt constant_primary constant_expression_nlrs
         '''
-        if len(args) >0 :
+        if len(args) >0 and args[2]!=None :
             return AST('single',[args[1],args[2]])
+        else : 
+            return AST('single',[args[1]])
         pass
 
     def p_generate_single(self,args):
@@ -310,22 +311,11 @@ class VeriSimParser(GenericParser):
         port_opt ::= port
         port_opt ::=
 
-        
-        
-
-
         port_expression_opt ::= port_expression?
-
-        
 
         ## (COMMA port_reference)*
         comma_port_references ::= comma_port_references COMMA port_reference
         comma_port_references ::=
-
-        
-
-
-
 
         module_items ::= module_items module_item
         module_items ::= 
@@ -348,11 +338,9 @@ class VeriSimParser(GenericParser):
         non_port_module_item ::= module_or_generate_item
         non_port_module_item ::= generate_region
 
-        
         wire_opt ::= WIRE?
         signed_opt ::= SIGNED?
         
-
         integer_declaration ::= INTEGER list_of_variable_identifiers SEMICOLON
 
         ## dor dimension and expression // line 67 
@@ -376,24 +364,18 @@ class VeriSimParser(GenericParser):
         variable_type ::= variable_identifier dimension*
         variable_type ::= variable_identifier IS_EQUAL constant_expression
 
-        
-
         list_of_real_identifiers ::= real_type COMMA_real_types
         COMMA_real_types ::= COMMA_real_types COMMA real_type
         ###(COMMA port_identifier [IS_EQUAL constant_expression])*
         list_of_variable_identifiers ::= port_identifier IS_EQUAL_constant_expression_opt COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s
 
-        
         IS_EQUAL_constant_expression_opt ::= IS_EQUAL constant_expression
         COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s ::= COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s COMMA port_identifier  IS_EQUAL_constant_expression_opt
         COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s ::= 
 
         IS_EQUAL_constant_expression_opt ::=
 
-
         dimension ::= LBRACKET dimension_constant_expression COLON dimension_constant_expression RBRACKET
-    
-        
 
         ### gatetype
         gate_instantiation ::= n_input_gatetype n_input_gate_instance COMMA_n_input_gate_instances SEMICOLON
@@ -439,8 +421,6 @@ class VeriSimParser(GenericParser):
         loop_generate_construct ::= FOR LPAREN genvar_initialization SEMICOLON genvar_expression SEMICOLON genvar_iteration RPAREN module_or_generate_item
         genvar_initialization ::= genvar_identifier IS_EQUAL constant_expression
 
-
-
         genvar_expression ::= unary_operator? genvar_primary genvar_expression_nlr
 
         genvar_expression_nlr ::= binary_operator genvar_expression genvar_expression_nlr
@@ -463,14 +443,12 @@ class VeriSimParser(GenericParser):
         case_generate_item ::= DEFAULT COLON generate_block_or_null
 
         COLON_generate_block_identifier_opt ::= COLON generate_block_identifier
-        generate_block ::= BEGIN COLON_generate_block_identifier_opt module_or_generate_item* END
-        
+        generate_block ::= BEGIN COLON_generate_block_identifier_opt module_or_generate_item* END 
 
         generate_block_or_null ::= generate_block
         generate_block_or_null ::= module_or_generate_item
         generate_block_or_null ::= SEMICOLON
         continuous_assign ::= ASSIGN list_of_net_assignments SEMICOLON
-
 
         list_of_net_assignments ::= net_assignment COMMA_net_assignments
         COMMA_net_assignments ::= COMMA_net_assignments COMMA net_assignment
@@ -479,7 +457,6 @@ class VeriSimParser(GenericParser):
         net_assignment ::= net_lvalue IS_EQUAL expression
         initial_construct ::= INITIAL statement
         always_construct ::= ALWAYS statement
-
 
         procedural_continuous_assignments ::= ASSIGN variable_assignment
         variable_assignment ::= variable_lvalue IS_EQUAL expression
@@ -501,7 +478,6 @@ class VeriSimParser(GenericParser):
         COMMA_expressions ::= COMMA_expressions COMMA expression
         COMMA_expressions ::= 
         great1_opt ::= 
-
 
         ##dor COMP_OP MUSTbe '<=' ?
         great2_opt ::= COMP_OP delay_or_event_control_opt expression_opt
@@ -531,8 +507,6 @@ class VeriSimParser(GenericParser):
         ##dor!!! STAR must be caution
         event_control ::= AT LPAREN BINOP RPAREN
         event_control ::= AT BINOP
-
-
 
         event_expression ::= POSEDGE expression event_expression_nlr
         event_expression ::= expression event_expression_nlr
@@ -648,8 +622,6 @@ class VeriSimParser(GenericParser):
         COMMA_variable_or_net_lvalues ::= COMMA_variable_or_net_lvalues COMMA variable_or_net_lvalue
         COMMA_variable_or_net_lvalues ::=
 
-        
-
         # number ::= natural_number based_number?
         # number ::= natural_number base_format_base_value_opt
         # base_format_base_value_opt ::= base_format base_value
@@ -669,8 +641,6 @@ class VeriSimParser(GenericParser):
         sizedbased_number ::= SIZE_NUMBER
         base_format ::= SIZE_NUMBER
 
-        
-
         ## list_of_variable_port_identifiers ::= port_identifier [ IS_EQUAL constant_expression ]  (COMMA port_identifier [ IS_EQUAL constant_expression ])*
         list_of_variable_port_identifiers ::= port_identifier IS_EQUAL_constant_expression_opt COMMA_port_identifier_IS_EQUAL_constant_expression_opts
         IS_EQUAL_constant_expression_opt ::= IS_EQUAL constant_expression
@@ -678,15 +648,7 @@ class VeriSimParser(GenericParser):
         COMMA_port_identifier_IS_EQUAL_constant_expression_opts ::= COMMA port_identifier IS_EQUAL_constant_expression_opt
         COMMA_port_identifier_IS_EQUAL_constant_expression_opts ::=
 
-
-        
-        
-
         dimension_constant_expression ::= constant_expression 
-        
-        
-        
-        
         
         unary_operator_opt ::= unary_operator
         unary_operator_opt ::= 
