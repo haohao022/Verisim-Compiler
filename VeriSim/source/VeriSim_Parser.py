@@ -128,16 +128,28 @@ class VeriSimParser(GenericParser):
         return AST('single',[args[0]])
 ###dor
 
-    
 
     def p_list_of_ports(self,args):
         '''
         ## 这里的port真的需要左右有中括号吗？ list_of_ports ::= port (COMMA [port])*
         ## new comma_port_opt_s
         list_of_ports ::= port comma_port_opt_s
+        ## list_of_port_declarations ::= port_declaration (COMMA port_declaration)*
+        ## comma_port_declarations 
+        list_of_port_declarations ::= port_declaration comma_port_declarations
         '''
-        return AST('PORTs', [args[0],args[1]])
 
+        return AST('PORTs', [args[0],args[1]])
+    
+    def p_port_dec(self,args):
+        '''
+        port_declaration ::= input_declaration
+        port_declaration ::= output_declaration
+        
+        '''
+        if len(args) >0 :
+            return AST('single',[args[0]])
+        pass
         
     def p_module_dec_4(self,args):
         '''
@@ -148,13 +160,23 @@ class VeriSimParser(GenericParser):
             return AST('single',[args[2]] )
         pass
 
-    def p_port_decla(self,args):
+    def p_ident_kind(self,args):
         '''
         module_identifier ::= identifier 
         port_identifier ::= identifier
+        net_identifier ::= identifier 
+        gate_instance_identifier ::= identifier 
+        genvar_identifier ::= identifier 
+        block_identifier ::= identifier 
+
         '''
-        return AST('NAME' ,args[0])
+        return AST('single' ,args[0])
         
+    def p_ident(self,args):
+        '''
+        identifier ::= NAME
+        '''
+        return AST('NAME',[args[0]])
 
 
     def p_port_output_decla(self,args):
@@ -189,8 +211,6 @@ class VeriSimParser(GenericParser):
 
     def p_constant_pri_1(self,args):
         '''
-        constant_primary ::= number
-        number ::= real_number
         real_number ::= NUMBER
         '''
         tmp = AST('NUMBER', [args[0]])
@@ -200,6 +220,7 @@ class VeriSimParser(GenericParser):
         '''
         port ::= port_expression
         port ::= DOT port_identifier LPAREN port_expression_opt RPAREN
+        
         '''
         if len(args) == 1 :
             return AST('PORT', [args[0]])
@@ -232,17 +253,65 @@ class VeriSimParser(GenericParser):
             return AST('single',[args[0]])
         pass
 
+    def p_input_dec(self,args):
+        '''
+        input_declaration ::= INPUT wire_opt signed_opt range_opt list_of_port_identifiers
+        '''
+        if len(args) >0 :
+            return AST('INPUT',[args[3],args[4]])
+        pass
+
+    def p_port_dec_more(self,args):
+            '''
+            comma_port_declarations ::= comma_port_declarations COMMA port_declaration
+            comma_port_declarations ::= 
+            '''
+            if len(args) >0 :
+                    return AST('MORE',[args[0],args[2]])
+            pass
+
+    def p_port_ident(self,args):
+        '''
+        list_of_port_identifiers ::= port_identifier COMMA_port_identifiers
+        COMMA_port_identifiers ::= COMMA_port_identifiers COMMA port_identifier
+        COMMA_port_identifiers ::=
+        '''
+        if len(args) ==2  :
+            return AST('PORT_ident',[args[0]])
+        elif len( args) == 3 :
+            if args[0] != None :
+                return AST('PORT_ident',[args[0],args[3]])
+            else :
+                return AST('PORT_ident',[args[3]])
+        pass
+
+    def p_const_expr(self,args):
+        '''
+        ## constant_expression ::= [ unary_operator ] constant_primary constant_expression_nlrs
+        constant_expression ::= unary_operator_opt constant_primary constant_expression_nlrs
+        '''
+        if len(args) >0 :
+            return AST('single',[args[1],args[2]])
+        pass
+
+    def p_generate_single(self,args):
+        '''
+        msb_constant_expression ::= constant_expression 
+        lsb_constant_expression ::= constant_expression
+        constant_primary ::= number
+        number ::= real_number
+        '''
+
+        return AST('single',args[0])
+
     def p_python_grammar(self, args):
         ''' 
 
         port_opt ::= port
         port_opt ::=
 
-        ## list_of_port_declarations ::= port_declaration (COMMA port_declaration)*
-        ## comma_port_declarations 
-        list_of_port_declarations ::= port_declaration comma_port_declarations
-        comma_port_declarations ::= comma_port_declarations COMMA port_declaration
-        comma_port_declarations ::= 
+        
+        
 
 
         port_expression_opt ::= port_expression?
@@ -257,8 +326,7 @@ class VeriSimParser(GenericParser):
 
 
 
-        port_declaration ::= input_declaration
-        port_declaration ::= output_declaration
+
         module_items ::= module_items module_item
         module_items ::= 
         module_item ::= port_declaration SEMICOLON
@@ -267,7 +335,7 @@ class VeriSimParser(GenericParser):
         module_or_generate_item ::= module_or_generate_item_declaration
         module_or_generate_item ::= continuous_assign
         module_or_generate_item ::= gate_instantiation
-        module_or_generate_item ::= initial_construct
+###        module_or_generate_item ::= initial_construct
         module_or_generate_item ::= always_construct
         module_or_generate_item ::= loop_generate_construct
         module_or_generate_item ::= conditional_generate_construct
@@ -275,17 +343,14 @@ class VeriSimParser(GenericParser):
         module_or_generate_item_declaration ::= net_declaration
         module_or_generate_item_declaration ::= reg_declaration 
         module_or_generate_item_declaration ::= integer_declaration
-        module_or_generate_item_declaration ::= real_declaration
         module_or_generate_item_declaration ::= genvar_declaration
 
         non_port_module_item ::= module_or_generate_item
         non_port_module_item ::= generate_region
 
-        input_declaration ::= INPUT wire_opt signed_opt range_opt list_of_port_identifiers
+        
         wire_opt ::= WIRE?
         signed_opt ::= SIGNED?
-        
-
         
 
         integer_declaration ::= INTEGER list_of_variable_identifiers SEMICOLON
@@ -302,7 +367,6 @@ class VeriSimParser(GenericParser):
 
         net_declaration ::= WIRE signed_opt range_opt list_of_net_decl_assignments_or_identifiers SEMICOLON
 
-        real_declaration ::= REAL list_of_real_identifiers
         reg_declaration ::= REG signed_opt range_opt list_of_variable_identifiers SEMICOLON
 
         real_type ::= real_identifier dimension*
@@ -312,9 +376,7 @@ class VeriSimParser(GenericParser):
         variable_type ::= variable_identifier dimension*
         variable_type ::= variable_identifier IS_EQUAL constant_expression
 
-        list_of_port_identifiers ::= port_identifier COMMA_port_identifiers
-        COMMA_port_identifiers ::= COMMA_port_identifiers COMMA port_identifier
-        COMMA_port_identifiers ::=
+        
 
         list_of_real_identifiers ::= real_type COMMA_real_types
         COMMA_real_types ::= COMMA_real_types COMMA real_type
@@ -500,7 +562,7 @@ class VeriSimParser(GenericParser):
         expression_nlrs ::= 
         expression_nlr ::=  binary_operator expression
         expression_nlr ::=  QUES expression COLON expression
-        lsb_constant_expression ::= constant_expression
+        
 
         
         ### constant_primary ::= string
@@ -619,17 +681,13 @@ class VeriSimParser(GenericParser):
 
         
         
-        net_identifier ::= identifier 
-        gate_instance_identifier ::= identifier 
-        genvar_identifier ::= identifier 
-        block_identifier ::= identifier 
+
         dimension_constant_expression ::= constant_expression 
         
-        msb_constant_expression ::= constant_expression 
         
         
-        ## constant_expression ::= [ unary_operator ] constant_primary constant_expression_nlrs
-        constant_expression ::= unary_operator_opt constant_primary constant_expression_nlrs
+        
+        
         unary_operator_opt ::= unary_operator
         unary_operator_opt ::= 
 
