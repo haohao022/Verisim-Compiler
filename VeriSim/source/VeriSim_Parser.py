@@ -250,7 +250,7 @@ class VeriSimParser(GenericParser):
         LBRACKET_constant_range_expression_RBRACKET_opt ::=
         '''
         if len(args) >0 :
-            return AST('single',[args[0]])
+            return AST('single',[args[1]])
         pass
 
     def p_input_dec(self,args):
@@ -302,6 +302,23 @@ class VeriSimParser(GenericParser):
         lsb_constant_expression ::= constant_expression
         constant_primary ::= number
         number ::= real_number
+        module_item ::= non_port_module_item
+
+
+        module_or_generate_item ::= module_or_generate_item_declaration
+        module_or_generate_item ::= continuous_assign
+        module_or_generate_item ::= gate_instantiation
+        module_or_generate_item ::= always_construct
+        module_or_generate_item ::= loop_generate_construct
+        module_or_generate_item ::= conditional_generate_construct
+        non_port_module_item ::= module_or_generate_item
+        non_port_module_item ::= generate_region
+        
+        module_or_generate_item_declaration ::= net_declaration
+        module_or_generate_item_declaration ::= reg_declaration 
+        module_or_generate_item_declaration ::= integer_declaration
+        module_or_generate_item_declaration ::= genvar_declaration
+
         '''
 
         return AST('single',args[0])
@@ -313,106 +330,20 @@ class VeriSimParser(GenericParser):
         '''
         if len(args) >0 :
                 return AST('more',[args[0],args[1]])
+        
         pass
 
-
-
-
-    def p_python_grammar(self, args):
-        ''' 
-
-
-        port_expression_opt ::= port_expression?
-
-        ## (COMMA port_reference)*
-        comma_port_references ::= comma_port_references COMMA port_reference
-        comma_port_references ::=
-
-
-        module_item ::= non_port_module_item
-
-        module_or_generate_item ::= module_or_generate_item_declaration
-        module_or_generate_item ::= continuous_assign
-        module_or_generate_item ::= gate_instantiation
-###        module_or_generate_item ::= initial_construct
-        module_or_generate_item ::= always_construct
-        module_or_generate_item ::= loop_generate_construct
-        module_or_generate_item ::= conditional_generate_construct
-
-        module_or_generate_item_declaration ::= net_declaration
-        module_or_generate_item_declaration ::= reg_declaration 
-        module_or_generate_item_declaration ::= integer_declaration
-        module_or_generate_item_declaration ::= genvar_declaration
-
-        non_port_module_item ::= module_or_generate_item
-        non_port_module_item ::= generate_region
-
-        wire_opt ::= WIRE?
-        signed_opt ::= SIGNED?
-        
-        integer_declaration ::= INTEGER list_of_variable_identifiers SEMICOLON
-
-        ## dor dimension and expression // line 67 
-        ## list_of_net_decl_assignments_or_identifiers ::= net_identifier [ dor_dim_and_exp ] (COMMA net_identifier dor_dim_and_exp )*
-        list_of_net_decl_assignments_or_identifiers ::= net_identifier dor_dim_and_exp_opt  COMMA_net_identifier_dor_dim_and_exps
+    def p_gen_single_or_not(self,args):
+        '''
+        ### dim_and_exp :  数组长度
         dor_dim_and_exp_opt ::= dor_dim_and_exp?
-        COMMA_net_identifier_dor_dim_and_exps     ::= COMMA_net_identifier_dor_dim_and_exps COMMA net_identifier dor_dim_and_exp
-        COMMA_net_identifier_dor_dim_and_exps ::= 
+        '''
+        if args[0] !=None:
+            return AST('single',[args[0])
 
-        dor_dim_and_exp ::= dimension+
-        dor_dim_and_exp ::= IS_EQUAL expression
-
-        net_declaration ::= WIRE signed_opt range_opt list_of_net_decl_assignments_or_identifiers SEMICOLON
-
-        reg_declaration ::= REG signed_opt range_opt list_of_variable_identifiers SEMICOLON
-
-        real_type ::= real_identifier dimension*
-
-        real_type ::= real_identifier IS_EQUAL constant_expression
-
-        variable_type ::= variable_identifier dimension*
-        variable_type ::= variable_identifier IS_EQUAL constant_expression
-
-        list_of_real_identifiers ::= real_type COMMA_real_types
-        COMMA_real_types ::= COMMA_real_types COMMA real_type
-        ###(COMMA port_identifier [IS_EQUAL constant_expression])*
-        list_of_variable_identifiers ::= port_identifier IS_EQUAL_constant_expression_opt COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s
-
-        IS_EQUAL_constant_expression_opt ::= IS_EQUAL constant_expression
-        COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s ::= COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s COMMA port_identifier  IS_EQUAL_constant_expression_opt
-        COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s ::= 
-
-        IS_EQUAL_constant_expression_opt ::=
-
-        dimension ::= LBRACKET dimension_constant_expression COLON dimension_constant_expression RBRACKET
-
-        ### gatetype
-        gate_instantiation ::= n_input_gatetype n_input_gate_instance COMMA_n_input_gate_instances SEMICOLON
-        COMMA_n_input_gate_instances ::= COMMA_n_input_gate_instances COMMA n_input_gate_instance
-        COMMA_n_input_gate_instances ::= 
-
-        gate_instantiation ::= n_output_gatetype n_output_gate_instance COMMA_n_output_gate_instances SEMICOLON
-        COMMA_n_output_gate_instances ::= COMMA_n_output_gate_instances COMMA n_output_gate_instances
-        COMMA_n_output_gate_instances ::= 
-
-        n_input_gate_instance ::= name_of_gate_instance_opt LPAREN output_terminal COMMA input_terminal COMMA_input_terminals RPAREN
-        name_of_gate_instance_opt ::= name_of_gate_instance?
-        COMMA_input_terminals ::= COMMA_input_terminals COMMA input_terminal
-        COMMA_input_terminals ::= 
-
-        n_output_gate_instance ::= name_of_gate_instance_opt LPAREN input_or_output_terminal COMMA_input_or_output_terminals RPAREN
-        COMMA_input_or_output_terminals ::= COMMA_input_or_output_terminals COMMA input_or_output_terminal
-        COMMA_input_or_output_terminals ::= 
-
-        input_terminal ::= expression
-
-        ## dor :dont dnow expression_2
-        ### input_or_output_terminal ::= expression_2
-        input_or_output_terminal ::= expression
-
-
-        name_of_gate_instance ::= gate_instance_identifier LBRACKET range RBRACKET
-
+    
+    def p_gate_type(self,args):
+        '''
         ## gatetype
         n_input_gatetype ::= AND
         n_input_gatetype ::= NAND
@@ -421,23 +352,85 @@ class VeriSimParser(GenericParser):
         n_input_gatetype ::= XOR
         n_input_gatetype ::= XNOR
         n_output_gatetype ::= NOT
+        '''
+        return AST(args[0].name ,[args[0]] )
 
-        generate_region ::= GENERATE module_or_generate_item* ENDGENERATE
-        genvar_declaration ::= GENVAR list_of_genvar_identifiers SEMICOLON
+    def p_int_dec(self,args):
+        '''
+        integer_declaration ::= INTEGER list_of_variable_identifiers SEMICOLON
+        '''
+        return AST('INT',[args[1]])
 
-        # list_of_genvar_identifiers ::= genvar_identifier (COMMA genvar_identifier)* 
-        loop_generate_construct ::= FOR LPAREN genvar_initialization SEMICOLON genvar_expression SEMICOLON genvar_iteration RPAREN generate_block
-        loop_generate_construct ::= FOR LPAREN genvar_initialization SEMICOLON genvar_expression SEMICOLON genvar_iteration RPAREN module_or_generate_item
-        genvar_initialization ::= genvar_identifier IS_EQUAL constant_expression
+    def p_net_wire_dec(self,args):
+        '''
+        net_declaration ::= WIRE signed_opt range_opt list_of_net_decl_assignments_or_identifiers SEMICOLON
+        '''
+        return AST('WIRE',[args[2],args[3]])
 
-        genvar_expression ::= unary_operator? genvar_primary genvar_expression_nlr
+    def p_net_reg_dec(self,args):
+        '''
+        reg_declaration ::= REG signed_opt range_opt list_of_variable_identifiers SEMICOLON
+        '''
+        return AST('REG',[args[2],args[3]])
 
-        genvar_expression_nlr ::= binary_operator genvar_expression genvar_expression_nlr
-        genvar_expression_nlr ::= QUES genvar_expression COLON genvar_expression genvar_expression_nlr
-        genvar_expression_nlr ::= 
+    def p_net_wire_1(self,args):
+        '''
+        ## dor dimension and expression // line 67 
+        ## list_of_net_decl_assignments_or_identifiers ::= net_identifier [ dor_dim_and_exp ] (COMMA net_identifier dor_dim_and_exp )*
+        list_of_net_decl_assignments_or_identifiers ::= net_identifier dor_dim_and_exp_opt  COMMA_net_identifier_dor_dim_and_exps
+        
+        '''
 
-        genvar_iteration ::= genvar_identifier IS_EQUAL genvar_expression
-        genvar_primary ::= constant_primary
+        #暂时不考虑args[2]
+        if(args[1]!=None):
+            return AST('plex',[args[0],args[1]] )
+        else :
+            return AST('single',[args[0]])
+
+    def p_dim_1(self,args):
+        '''
+        dor_dim_and_exp ::= dimension+
+        dor_dim_and_exp ::= IS_EQUAL expression
+        '''
+        #todo:
+        ##dor: dont know how to resolve
+        if len(args) == 1 :
+            return AST('plex',[args[0]])
+        else :
+            return AST('EQUAL',[args[1]] )
+
+    def p_dim_2(self,args):
+        '''
+        dimension ::= LBRACKET dimension_constant_expression COLON dimension_constant_expression RBRACKET
+        '''
+        return AST('dim',[args[1],args[3]])
+    
+
+    def p_list_var_1(self,args):
+        '''
+        ###(COMMA port_identifier [IS_EQUAL constant_expression])*
+        list_of_variable_identifiers ::= port_identifier IS_EQUAL_constant_expression_opt COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s
+        '''
+        return AST('plex',[args[0],args[1]] )
+    
+    def p_list_var_1_1(self,args):
+        '''
+        COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s ::= COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s COMMA port_identifier  IS_EQUAL_constant_expression_opt
+        COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s ::= 
+        '''
+        if len(args) >0:
+            return AST('more',[args[0],args[2],args[3]] )
+
+    def p_list_var_2(self,args):
+        '''
+        IS_EQUAL_constant_expression_opt ::= IS_EQUAL constant_expression
+        IS_EQUAL_constant_expression_opt ::=
+        '''
+        if len(args)>0 :
+            return AST('EQUAL',[args[1]])
+
+    def p_python_grammar(self, args):
+        ''' 
         conditional_generate_construct ::= if_generate_construct
         conditional_generate_construct ::= case_generate_construct
 
@@ -545,8 +538,6 @@ class VeriSimParser(GenericParser):
         expression_nlrs ::= 
         expression_nlr ::=  binary_operator expression
         expression_nlr ::=  QUES expression COLON expression
-        
-
         
         ### constant_primary ::= string
 
@@ -671,10 +662,65 @@ class VeriSimParser(GenericParser):
         unary_operator ::= MINUS
         unary_operator ::= QUES
 
-
         ## unused -----
+        ### generate
+        generate_region ::= GENERATE module_or_generate_item* ENDGENERATE
+        genvar_declaration ::= GENVAR list_of_genvar_identifiers SEMICOLON
+
+        # list_of_genvar_identifiers ::= genvar_identifier (COMMA genvar_identifier)* 
+        loop_generate_construct ::= FOR LPAREN genvar_initialization SEMICOLON genvar_expression SEMICOLON genvar_iteration RPAREN generate_block
+        loop_generate_construct ::= FOR LPAREN genvar_initialization SEMICOLON genvar_expression SEMICOLON genvar_iteration RPAREN module_or_generate_item
+        genvar_initialization ::= genvar_identifier IS_EQUAL constant_expression
+
+        genvar_expression ::= unary_operator? genvar_primary genvar_expression_nlr
+
+        genvar_expression_nlr ::= binary_operator genvar_expression genvar_expression_nlr
+        genvar_expression_nlr ::= QUES genvar_expression COLON genvar_expression genvar_expression_nlr
+        genvar_expression_nlr ::= 
+
+        genvar_iteration ::= genvar_identifier IS_EQUAL genvar_expression
+        genvar_primary ::= constant_primary
+
+        ### gatetype
+        gate_instantiation ::= n_input_gatetype n_input_gate_instance COMMA_n_input_gate_instances SEMICOLON
+        COMMA_n_input_gate_instances ::= COMMA_n_input_gate_instances COMMA n_input_gate_instance
+        COMMA_n_input_gate_instances ::= 
+
+        gate_instantiation ::= n_output_gatetype n_output_gate_instance COMMA_n_output_gate_instances SEMICOLON
+        COMMA_n_output_gate_instances ::= COMMA_n_output_gate_instances COMMA n_output_gate_instances
+        COMMA_n_output_gate_instances ::= 
+
+        n_input_gate_instance ::= name_of_gate_instance_opt LPAREN output_terminal COMMA input_terminal COMMA_input_terminals RPAREN
+        name_of_gate_instance_opt ::= name_of_gate_instance?
+        COMMA_input_terminals ::= COMMA_input_terminals COMMA input_terminal
+        COMMA_input_terminals ::= 
+
+        n_output_gate_instance ::= name_of_gate_instance_opt LPAREN input_or_output_terminal COMMA_input_or_output_terminals RPAREN
+        COMMA_input_or_output_terminals ::= COMMA_input_or_output_terminals COMMA input_or_output_terminal
+        COMMA_input_or_output_terminals ::= 
+
+        input_terminal ::= expression
+        #### dor :dont dnow expression_2
+        ##### input_or_output_terminal ::= expression_2
+        input_or_output_terminal ::= expression
+
+        name_of_gate_instance ::= gate_instance_identifier LBRACKET range RBRACKET
+
         port_opt ::= port
         port_opt ::=
+        port_expression_opt ::= port_expression?
+
+        ## (COMMA port_reference)*
+        comma_port_references ::= comma_port_references COMMA port_reference
+        comma_port_references ::=
+        wire_opt ::= WIRE?
+        signed_opt ::= SIGNED?
+
+        COMMA_net_identifier_dor_dim_and_exps     ::= COMMA_net_identifier_dor_dim_and_exps COMMA net_identifier dor_dim_and_exp
+        COMMA_net_identifier_dor_dim_and_exps ::= 
+
+        
+
 
     '''
 
