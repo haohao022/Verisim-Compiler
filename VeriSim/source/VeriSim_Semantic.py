@@ -121,8 +121,9 @@ class Interpret(GenericASTTraversal):
         self.cur_name = node.name
         if self.check_is_decla():
             self.new_decla()
+            self.prune()
         
-        self.prune()
+        
 
     def n_multiply(self, node):
         node.attr = int(node[0].attr) * int(node[1].attr)
@@ -165,7 +166,7 @@ class Interpret(GenericASTTraversal):
         self.wire_type ='WIRE'
         self.cur_module = self.cur_name 
         self.dec_flag = True
-        
+
 
     def n_RANGE(self,node):
         self.sb_flag =True

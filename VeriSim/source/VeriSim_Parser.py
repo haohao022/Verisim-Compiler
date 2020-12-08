@@ -215,6 +215,7 @@ class VeriSimParser(GenericParser):
         tmp = AST('NUMBER', [args[0]])
         return tmp
 
+
     def p_port(self,args):
         '''
         port ::= port_expression
@@ -305,11 +306,21 @@ class VeriSimParser(GenericParser):
 
         return AST('single',args[0])
 
+    def p_port_dec_more(self,args):
+        '''
+        module_items ::= module_items module_item
+        module_items ::= 
+        '''
+        if len(args) >0 :
+                return AST('more',[args[0],args[1]])
+        pass
+
+
+
+
     def p_python_grammar(self, args):
         ''' 
 
-        port_opt ::= port
-        port_opt ::=
 
         port_expression_opt ::= port_expression?
 
@@ -317,9 +328,7 @@ class VeriSimParser(GenericParser):
         comma_port_references ::= comma_port_references COMMA port_reference
         comma_port_references ::=
 
-        module_items ::= module_items module_item
-        module_items ::= 
-        module_item ::= port_declaration SEMICOLON
+
         module_item ::= non_port_module_item
 
         module_or_generate_item ::= module_or_generate_item_declaration
@@ -662,7 +671,11 @@ class VeriSimParser(GenericParser):
         unary_operator ::= MINUS
         unary_operator ::= QUES
 
-        identifier ::= NAME
+
+        ## unused -----
+        port_opt ::= port
+        port_opt ::=
+
     '''
 
 
