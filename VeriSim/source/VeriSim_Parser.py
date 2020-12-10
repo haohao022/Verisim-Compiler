@@ -2,9 +2,12 @@
 """
 More complex expression parsing
 """
-
 # from __future__ import print_function
-import sys
+import os,sys
+os.chdir(sys.path[0])
+
+
+
 from spark_parser.ast import AST
 
 from VeriSim_Scanner import VeriSimScanner, ENDMARKER
@@ -116,18 +119,15 @@ class VeriSimParser(GenericParser):
         '''
         if len(args)!=0 and args[0] != None :
            return AST('single', [args[0]]) 
-
         pass
 
     def p_module_dec_3(self,args):
         '''
-        dor_list_of_ports_or_decla ::= list_of_ports
         dor_list_of_ports_or_decla ::= list_of_port_declarations
         '''
         return AST('single',[args[0]])
+
 ###dor
-
-
     def p_list_of_ports(self,args):
         '''
         ## 这里的port真的需要左右有中括号吗？ list_of_ports ::= port (COMMA [port])*
@@ -262,13 +262,13 @@ class VeriSimParser(GenericParser):
         pass
 
     def p_port_dec_more(self,args):
-            '''
-            comma_port_declarations ::= comma_port_declarations COMMA port_declaration
-            comma_port_declarations ::= 
-            '''
-            if len(args) >0 :
-                    return AST('MORE',[args[0],args[2]])
-            pass
+        '''
+        comma_port_declarations ::= comma_port_declarations COMMA port_declaration
+        comma_port_declarations ::= 
+        '''
+        if len(args) >0 :
+                return AST('MORE',[args[0],args[2]])
+        pass
 
     def p_port_ident(self,args):
         '''
@@ -283,6 +283,8 @@ class VeriSimParser(GenericParser):
                 return AST('PORT_ident',[args[0],args[3]])
             else :
                 return AST('PORT_ident',[args[3]])
+        elif len(args)==1:
+            return AST('single',[args[0]])
         pass
 
     def p_const_expr(self,args):
@@ -429,6 +431,116 @@ class VeriSimParser(GenericParser):
         if len(args)>0 :
             return AST('EQUAL',[args[1]])
 
+    def p_assign_dec(self,args):
+        '''
+        continuous_assign ::= ASSIGN list_of_net_assignments SEMICOLON
+        '''
+        return AST('ASSIGN',[args[1]] )
+    
+    def p_assign_dec_1(self,args):
+        '''
+        list_of_net_assignments ::= net_assignment COMMA_net_assignments
+        COMMA_net_assignments ::= COMMA_net_assignments COMMA net_assignment
+        COMMA_net_assignments ::= 
+        '''
+        if len(args)==0 :
+            return AST('None',None)
+        elif len(args)== 3 :
+            if args[1] !=None:
+                return AST('More',[args[0],args[2]])
+            else :
+                return AST('single',[args[2]] )
+        else :
+            if args[1] !=None:
+                return AST('More',[args[0],args[1]])
+            else :
+                return AST('single',[args[0]])
+        pass
+
+    def p_assign_dec_2(self,args):
+        '''
+        net_assignment ::= net_lvalue IS_EQUAL expression
+        '''
+        return AST('ASSIGN_2',[args[0],args[2]])
+
+    def p_assign_dec_3_0(self,args):
+        '''
+        net_lvalue ::= hierarchical_identifier_range_const
+        net_lvalue ::= LBRACE net_lvalue COMMA_net_lvalues RBRACE	
+        '''
+        if len(args)==1:
+            return AST('NET_LEFT',[args[0]] )
+        else :
+            return AST('More',[args[1],args[2]])
+
+    def p_assign_dec_3_0_2(self,args):
+        '''
+        COMMA_net_lvalues ::= COMMA_net_lvalues COMMA net_lvalue
+        COMMA_net_lvalues ::= 
+        '''
+        if len(args)==0:
+            return AST('None',None)
+        else :
+            return AST('More',[args[0],args[2]])
+    
+
+    def p_exp_content_0(self,args):
+        '''
+        expression ::= unary_operator_opt primary  expression_nlrs
+        '''
+        # 目前忽略operator
+        return AST('EXPR',[args[1],args[2]])
+
+    def p_primary_1(self,args):
+        '''
+        ##  primary ::= hierarchical_identifier_range   [ LPAREN expression (COMMA expression)* RPAREN ]
+        primary ::= hierarchical_identifier_range   LPAREN_expression_COMMA_expressions_RPAREN_opt 
+        LPAREN_expression_COMMA_expressions_RPAREN_opt ::= LPAREN expression COMMA_expressions RPAREN
+        LPAREN_expression_COMMA_expressions_RPAREN_opt ::= 
+        '''
+        ## ignore args[1]
+        if len(args)==0:
+            return AST('None',None)
+        else :
+            return AST('single',[args[0]])
+    
+    def p_hie_ident_range_1(self,args):
+        '''
+        ## hierarchical_identifier_range ::= identifier ( DOT identifier [ LBRACKET range_expression RBRACKET ]  |  LBRACKET range_expression RBRACKET   )*
+        hierarchical_identifier_range ::= identifier great3_opt_s 
+        
+        '''
+        if len(args)==2:
+            return AST('IDENT_RANGE',[args[0],args[1]])
+
+    def p_hie_ident_range_1_2(self,args):
+        '''
+        great3_opt_s ::= great3_opt_s great3_opt_chosen
+        great3_opt_s ::= 
+        '''
+        ##ignore more opts
+        if len(args)==0:
+            return AST('None',None)
+        else :
+            return AST('single',[args[1]])
+
+    def p_hie_ident_range_2(self,args):
+        '''
+        great3_opt_chosen ::= LBRACKET range_expression RBRACKET
+        great3_opt_chosen ::= DOT identifier LBRACKET_range_expression_RBRACKET_opt
+        '''
+        ## ignore .ident
+        if len(args)==3:
+            return AST('RANGE_BIND',[args[1]])
+
+    def p_hie_ident_range_2_2(self,args):
+        '''
+        range_expression ::= NUMBER COLON NUMBER
+        '''
+        ##dor DIY: range_expression
+        return AST('plex',[args[0],args[2]])
+
+
     def p_python_grammar(self, args):
         ''' 
         conditional_generate_construct ::= if_generate_construct
@@ -450,13 +562,7 @@ class VeriSimParser(GenericParser):
         generate_block_or_null ::= generate_block
         generate_block_or_null ::= module_or_generate_item
         generate_block_or_null ::= SEMICOLON
-        continuous_assign ::= ASSIGN list_of_net_assignments SEMICOLON
-
-        list_of_net_assignments ::= net_assignment COMMA_net_assignments
-        COMMA_net_assignments ::= COMMA_net_assignments COMMA net_assignment
-        COMMA_net_assignments ::= 
-
-        net_assignment ::= net_lvalue IS_EQUAL expression
+        
         initial_construct ::= INITIAL statement
         always_construct ::= ALWAYS statement
 
@@ -533,7 +639,7 @@ class VeriSimParser(GenericParser):
         constant_expression_nlrs ::= constant_expression_nlrs binary_operator constant_expression
         constant_expression_nlrs ::=
         
-        expression ::= unary_operator_opt primary  expression_nlrs
+        
         expression_nlrs ::= expression_nlrs expression_nlr
         expression_nlrs ::= 
         expression_nlr ::=  binary_operator expression
@@ -565,10 +671,7 @@ class VeriSimParser(GenericParser):
         COMMA_constant_expressions ::=  COMMA_constant_expressions COMMA constant_expression
         COMMA_constant_expressions ::= 
 
-        ##  primary ::= hierarchical_identifier_range   [ LPAREN expression (COMMA expression)* RPAREN ]
-        primary ::= hierarchical_identifier_range   LPAREN_expression_COMMA_expressions_RPAREN_opt 
-        LPAREN_expression_COMMA_expressions_RPAREN_opt ::= LPAREN expression COMMA_expressions RPAREN
-        LPAREN_expression_COMMA_expressions_RPAREN_opt ::= 
+        
 
         primary ::= number
         ### primary ::= string
@@ -582,24 +685,10 @@ class VeriSimParser(GenericParser):
         LBRACE_expression_COMMA_expressions_RBRACE_opt ::= LBRACE expression COMMA_expressions RBRACE
         LBRACE_expression_COMMA_expressions_RBRACE_opt ::= 
 
-        ## hierarchical_identifier_range ::= identifier ( DOT identifier [ LBRACKET range_expression RBRACKET ]  |  LBRACKET range_expression RBRACKET   )*
-        hierarchical_identifier_range ::= identifier great3_opt_s 
-        great3_opt_s ::= great3_opt_s great3_opt_chosen
-        great3_opt_s ::= 
-        great3_opt_chosen ::= LBRACKET range_expression RBRACKET
-        great3_opt_chosen ::= DOT identifier LBRACKET_range_expression_RBRACKET_opt
+        
 
-        LBRACKET_range_expression_RBRACKET_opt ::= LBRACKET range_expression RBRACKET
-        LBRACKET_range_expression_RBRACKET_opt ::=
 
-        range_expression ::= expression COLON_lsb_constant_expression_opt
-        COLON_lsb_constant_expression_opt ::= COLON lsb_constant_expression
-
-        net_lvalue ::= hierarchical_identifier_range_const
-
-        net_lvalue ::= LBRACE net_lvalue COMMA_net_lvalues RBRACE	
-        COMMA_net_lvalues ::= COMMA_net_lvalues COMMA net_lvalue
-        COMMA_net_lvalues ::= 
+        
 
         ## hierarchical_identifier_range_const ::= identifier (DOT identifier [ LBRACKET constant_range_expression RBRACKET ] )*
         hierarchical_identifier_range_const ::= identifier DOT_identifier_LBRACKET_constant_range_expression_RBRACKET_opt_s
@@ -716,7 +805,7 @@ class VeriSimParser(GenericParser):
         wire_opt ::= WIRE?
         signed_opt ::= SIGNED?
 
-        COMMA_net_identifier_dor_dim_and_exps     ::= COMMA_net_identifier_dor_dim_and_exps COMMA net_identifier dor_dim_and_exp
+        COMMA_net_identifier_dor_dim_and_exps ::= COMMA_net_identifier_dor_dim_and_exps COMMA net_identifier dor_dim_and_exp
         COMMA_net_identifier_dor_dim_and_exps ::= 
 
     '''

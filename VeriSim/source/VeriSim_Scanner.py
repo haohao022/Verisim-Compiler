@@ -2,12 +2,12 @@
 Simple SPARK-style scanner
 Copyright (c) 2016 Rocky Bernstein
 """
-
+import os,sys
+os.chdir(sys.path[0])
 # from __future__ import print_function
 from spark_parser.scanner import GenericScanner
 from VeriSim_token import VeriSimToken
 
-import sys
 
 import re
 RESERVED_WORDS = re.split("\s+",
