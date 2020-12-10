@@ -13,5 +13,15 @@ module adder(
     output [3:0] Sum,
     output Overflow
     );
-	
+    
+
+    reg [4:0] sum_s;
+	assign {Overflow,Sum}=sum_s;
+
+    always @(posedge Clk) begin
+		if (En) begin
+			sum_s=A+B;
+		end		
+	end
+
 endmodule

@@ -339,7 +339,7 @@ class VeriSimParser(GenericParser):
         dor_dim_and_exp_opt ::= dor_dim_and_exp?
         '''
         if args[0] !=None:
-            return AST('single',[args[0])
+            return AST('single',[args[0]])
 
     
     def p_gate_type(self,args):
@@ -718,9 +718,6 @@ class VeriSimParser(GenericParser):
 
         COMMA_net_identifier_dor_dim_and_exps     ::= COMMA_net_identifier_dor_dim_and_exps COMMA net_identifier dor_dim_and_exp
         COMMA_net_identifier_dor_dim_and_exps ::= 
-
-        
-
 
     '''
 
