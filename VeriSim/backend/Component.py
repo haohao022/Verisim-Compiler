@@ -31,7 +31,6 @@ class Comp(object):
         SHIFTER = "Shifter"
         REGISTER = "Register"
 
-
     class Lib(object):
         """
         This class defines all the library of the components in the circuit
@@ -78,9 +77,25 @@ class Comp(object):
         self.__lib = lib
         self.__loc = loc
         self.__name = name
+        # dict: {Port.TAG: Port}
+        self.ports = {}
 
     def to_xml(self):
         pass
+
+
+# TODO: width <= 32
+class Port(object):
+    """
+    Each instance of this class represents a port on the components of the
+    circuit.
+    """
+
+    def __init__(self, width: int, loc=None, name=None):
+        self.width = width
+        self.loc = loc
+        self.name = name
+        self.linkedPorts = []
 
 
 # Below are Comp.Lib.WIRING classes, including Splitter, Pin, Constant,
@@ -89,29 +104,42 @@ class Comp(object):
 class Splitter(Comp):
     """
     Splitter class.
+    Ports: combined, out0 ~ outN(N = fanout)
     """
 
     class Appearance(object):
         """
         This class defines the value set of the Splitter appear field.
-        Default appearance should be LEFT_HANDED.
+        Used as splitter or combiner should have different appearance.
+        Default appearance of a splitter should be LEFT_HANDED, while the 
+        appearance of a combiner should default to RIGHT_HANDED.
         """
         LEFT_HANDED = "left"
         RIGHT_HANDED = "right"
         CENTERED = "center"
         LEGACY = "legacy"
 
-    def __init__(self, fanout, incoming, appear, facing=Comp.Facing.EAST):
+    # Parameter "combine" determines whether the Splitter is used as a combiner
+    # or a splitter.
+    def __init__(self, fanout, incoming, combine:bool):
         super(Splitter, self).__init__(Comp.Name.SPLITTER, Comp.Lib.WIRING)
-        self.appear = appear
-        self.facing = facing
+        self.fanout = fanout
+        self.incoming = incoming
+        if combine == False:
+            self.appear = Splitter.Appearance.LEFT_HANDED
+            self.facing = Comp.Facing.EAST
+        else:
+            self.appear = Splitter.Appearance.RIGHT_HANDED
+            self.facing = Comp.Facing.WEST
+        # Create ports for Splitter components.
+        self.ports.setdefault("combined", Port(incoming))
 
 
-# TODO: port
 # ?TODO: three state, pull behavior
 class Pin(Comp):
     """
     Pin class.
+    Ports: inout.
     """
 
     def __init__(self, width, output:bool, facing=None):
@@ -124,30 +152,36 @@ class Pin(Comp):
             self.facing = Comp.Facing.WEST
         else:
             self.facing = Comp.Facing.EAST
+        # Create ports for Pin components.
+        self.ports.setdefault("inout", Port(width))
 
 
-# TODO: port, consistency between vlaue and width.
+# TODO: consistency between vlaue and width.
 class Constant(Comp):
     """
     Constant class.
+    Ports: out.
     """
 
     def __init__(self, width, value, facing=Comp.Facing.EAST):
         super(Constant, self).__init__(Comp.Name.CONSTANT, Comp.Lib.WIRING)
         self.width = width
         self.value = value
+        # Create ports for Constant components.
+        self.ports.setdefault("out", Port(width))
 
 
-# TODO: port, input port when extension type is set input
 class BitExtender(Comp):
     """
     Bit Extender class.
+    Ports: in, out, prefix(on when type is set to INPUT)
     """
 
     class Type(object):
         """
         This class defines the value set of the Bit Extender type field.
-        Default value is ZERO.
+        Default value is ZERO. 
+        INPUT type allows user to determine the prefix dynamically.
         """
         ZERO = "zero"
         ONE = "one"
@@ -159,36 +193,20 @@ class BitExtender(Comp):
                                           Comp.Lib.WIRING)
         self.in_width = in_width
         self.out_width = out_width
+        # Create ports for BitExtender components.
+        self.ports.setdefault("in", Port(in_width))
+        self.ports.setdefault("out", Port(out_width))
+        if type == BitExtender.Type.INPUT:
+            self.ports.setdefault("prefix", Port(1))
 
 
 # Below are Comp.Lib.GATES classes, including NOT, AND, OR, NAND, NOR, XOR,
 # XNOR, Odd Parity, Even Parity.
-# TODO: port
-# ?TODO: output vlaue(01, 0Z, Z1), negate
-class TwoOperandGateShape(Comp):
-    """
-    Basic template for two operand gate.
-    This class is the base class for And, Or, Nand, Nor, Xor, Xnor,
-    OddParity, EvenParity
-    """
-
-    # Three options for size of such gate:
-    # Narrow(30), Medium(50), Wide(70)
-    # The size of such gates is often set to medium(50).
-    def __init__(self, name, width, inputs, size=Comp.GateSize.S50,
-                 facing=Comp.Facing.EAST):
-        super(TwoOperandGateShape, self).__init__(name, Comp.Lib.GATES)
-        self.width = width
-        self.inputs = inputs
-        self.size = size
-        self.facing = facing
-
-
-# TODO: port
 # ?TODO: output vlaue(01, 0Z, Z1)
 class Not(Comp):
     """
     NOT Gate class.
+    Ports: in, out
     """
 
     # There are two option for size of NOT Gate. Default size of NOT Gate 
@@ -199,6 +217,34 @@ class Not(Comp):
         self.width = width
         self.size = size
         self.facing = facing
+        self.ports.setdefault("in", Port(width))
+        self.ports.setdefault("out", Port(width))
+
+
+# ?TODO: output vlaue(01, 0Z, Z1), negate
+class TwoOperandGateShape(Comp):
+    """
+    Basic template for gates. It supports three or more inputs though it is
+    named TwoOperandGateShape.
+    This class is the base class for And, Or, Nand, Nor, Xor, Xnor,
+    OddParity, EvenParity
+    Ports: in0 ~ inN(N = inputs), out
+    """
+
+    # Three options for size of such gate:
+    # Narrow(30), Medium(50), Wide(70)
+    # The size of such gates is often set to medium(50).
+    def __init__(self, name, width, inputs: int, size=Comp.GateSize.S50,
+                 facing=Comp.Facing.EAST):
+        super(TwoOperandGateShape, self).__init__(name, Comp.Lib.GATES)
+        self.width = width
+        self.inputs = inputs
+        self.size = size
+        self.facing = facing
+        # Create ports for two-operand gates
+        for i in range(inputs):
+            self.ports.setdefault("in" + str(i), Port(width))
+        self.ports.setdefault("out", Port(width))
 
 
 class And(TwoOperandGateShape):
@@ -285,13 +331,14 @@ class EvenParity(TwoOperandGateShape):
 
 # Below are Comp.Lib.PLEXERS classes, including Multiplexer, Demultiplexer,
 # Decoder, Bit Selector.
-# TODO: port
+# TODO: select <= 5
 class Multiplexer(Comp):
     """
     Multiplexer class.
+    Ports: in0 ~ inN(N = 2^select), out, sel, en
     """
 
-    def __init__(self, width, select, enable=True,
+    def __init__(self, width, select: int, enable=False,
                  selloc=Comp.SelectLoc.BOTTOM_LEFT,
                  facing=Comp.Facing.EAST):
         super(Multiplexer, self).__init__(Comp.Name.MULTIPLEXER,
@@ -301,15 +348,23 @@ class Multiplexer(Comp):
         self.enable = enable
         self.selloc = selloc
         self.facing = facing
+        # Create ports for Multiplexer components.
+        for i in range(pow(2, select)):
+            self.ports.setdefault("in" + str(i), Port(width))
+        self.ports.setdefault("out", Port(width))
+        self.ports.setdefault("sel", Port(select))
+        if enable == True:
+            self.ports.setdefault("en", Port(1))
 
 
-# TODO: port
+# TODO: select <= 5
 class Demultiplexer(Comp):
     """
     Demultiplexer class.
+    Ports: in, out0 ~ outN(N = 2^select), sel, en
     """
 
-    def __init__(self, width, select, enable=True,
+    def __init__(self, width, select, enable=False,
                  selloc=Comp.SelectLoc.BOTTOM_LEFT,
                  facing=Comp.Facing.EAST):
         super(Demultiplexer, self).__init__(Comp.Name.DEMULTIPLEXER,
@@ -319,27 +374,42 @@ class Demultiplexer(Comp):
         self.enable = enable
         self.selloc = selloc
         self.facing = facing
+        # Create ports for Demultiplexer components.
+        self.ports.setdefault("in", Port(width))
+        for i in range(pow(2, select)):
+            self.ports.setdefault("out" + str(i), Port(width))
+        self.ports.setdefault("sel", Port(select))
+        if enable == True:
+            self.ports.setdefault("en", Port(1))
 
 
-# TODO: port
+# TODO: select <= 5
 class Decoder(Comp):
     """
     Decoder class.
+    Ports: in, out0 ~ outN(N = 2^select), en
     """
 
-    def __init__(self, select, enable=True, selloc=Comp.SelectLoc.BOTTOM_LEFT,
+    def __init__(self, select, enable=False, selloc=Comp.SelectLoc.BOTTOM_LEFT,
                  facing=Comp.Facing.EAST):
         super(Decoder, self).__init__(Comp.Name.DECODER, Comp.Lib.PLEXERS)
         self.select = select
         self.enable = enable
         self.selloc = selloc
         self.facing = facing
+        # Create ports for Decoder components.
+        self.ports.setdefault("in", Port(select))
+        for i in range(pow(2, select)):
+            self.ports.setdefault("out" + str(i), Port(1))
+        if enable == True:
+            self.ports.setdefault("en", Port(1))
 
 
 # TODO: port, consistency between width, group, and select.
 class BitSelector(Comp):
     """
     BitSelector class.
+    Port: in, out, sel
     """
 
     def __init__(self, width, group, facing=Comp.Facing.EAST):
