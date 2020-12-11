@@ -495,7 +495,8 @@ class VeriSimParser(GenericParser):
 
         range_expression ::= expression COLON_lsb_constant_expression_opt
         COLON_lsb_constant_expression_opt ::= COLON lsb_constant_expression
-
+        COLON_lsb_constant_expression_opt ::=
+        
         net_lvalue ::= hierarchical_identifier_range_const
 
         net_lvalue ::= LBRACE net_lvalue COMMA_net_lvalues RBRACE	

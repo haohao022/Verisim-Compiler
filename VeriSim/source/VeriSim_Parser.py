@@ -128,17 +128,19 @@ class VeriSimParser(GenericParser):
         return AST('single',[args[0]])
 
 ###dor
+
+
     def p_list_of_ports(self,args):
         '''
         ## 这里的port真的需要左右有中括号吗？ list_of_ports ::= port (COMMA [port])*
         ## new comma_port_opt_s
         list_of_ports ::= port comma_port_opt_s
-        ## list_of_port_declarations ::= port_declaration (COMMA port_declaration)*
-        ## comma_port_declarations 
+        
         list_of_port_declarations ::= port_declaration comma_port_declarations
         '''
-
-        return AST('PORTs', [args[0],args[1]])
+        if len(args) >1 :
+            return AST('PORTs', [args[0],args[1]])
+        return AST('single', [args[0]])
     
     def p_port_dec(self,args):
         '''
@@ -268,7 +270,8 @@ class VeriSimParser(GenericParser):
         '''
         if len(args) >0 :
                 return AST('MORE',[args[0],args[2]])
-        pass
+        return AST('None',[None])
+        
 
     def p_port_ident(self,args):
         '''
@@ -306,6 +309,8 @@ class VeriSimParser(GenericParser):
         number ::= real_number
         module_item ::= non_port_module_item
 
+        non_port_module_item ::= module_or_generate_item
+        non_port_module_item ::= generate_region
 
         module_or_generate_item ::= module_or_generate_item_declaration
         module_or_generate_item ::= continuous_assign
@@ -313,26 +318,31 @@ class VeriSimParser(GenericParser):
         module_or_generate_item ::= always_construct
         module_or_generate_item ::= loop_generate_construct
         module_or_generate_item ::= conditional_generate_construct
-        non_port_module_item ::= module_or_generate_item
-        non_port_module_item ::= generate_region
-        
+
         module_or_generate_item_declaration ::= net_declaration
         module_or_generate_item_declaration ::= reg_declaration 
         module_or_generate_item_declaration ::= integer_declaration
         module_or_generate_item_declaration ::= genvar_declaration
-
+        ##---- always statement
+        statement ::= blocking_assignment
+        statement ::= case_statement
+        statement ::= conditional_statement
+        statement ::= loop_statement
+        statement ::= procedural_continuous_assignments SEMICOLON
+        statement ::= SEMICOLON
         '''
 
-        return AST('single',args[0])
+        return AST('single',[args[0]])
 
-    def p_port_dec_more(self,args):
+    def p_port_dec_more_in_items(self,args):
         '''
         module_items ::= module_items module_item
         module_items ::= 
         '''
         if len(args) >0 :
-                return AST('more',[args[0],args[1]])
-        
+            return AST('Module_items',[args[0],args[1]])
+        else :
+            return AST('No More',[])
         pass
 
     def p_gen_single_or_not(self,args):
@@ -373,7 +383,7 @@ class VeriSimParser(GenericParser):
         '''
         reg_declaration ::= REG signed_opt range_opt list_of_variable_identifiers SEMICOLON
         '''
-        return AST('REG',[args[2],args[3]])
+        return AST('REG',[args[2],args[3],AST('dec_reg_flag')])
 
     def p_net_wire_1(self,args):
         '''
@@ -413,7 +423,11 @@ class VeriSimParser(GenericParser):
         ###(COMMA port_identifier [IS_EQUAL constant_expression])*
         list_of_variable_identifiers ::= port_identifier IS_EQUAL_constant_expression_opt COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s
         '''
-        return AST('plex',[args[0],args[1]] )
+        ## ignore more commas
+        if args[1]==None:
+            return AST('single',[args[0]])
+        else :
+            return AST('plex',[args[0],args[1]] )
     
     def p_list_var_1_1(self,args):
         '''
@@ -471,7 +485,7 @@ class VeriSimParser(GenericParser):
         if len(args)==1:
             return AST('NET_LEFT',[args[0]] )
         else :
-            return AST('More',[args[1],args[2]])
+            return AST('COMBINE',[args[1],args[2]])
 
     def p_assign_dec_3_0_2(self,args):
         '''
@@ -511,7 +525,7 @@ class VeriSimParser(GenericParser):
         
         '''
         if len(args)==2:
-            return AST('IDENT_RANGE',[args[0],args[1]])
+            return AST('More',[args[0],args[1]])
 
     def p_hie_ident_range_1_2(self,args):
         '''
@@ -541,6 +555,140 @@ class VeriSimParser(GenericParser):
         return AST('plex',[args[0],args[2]])
 
 
+    def p_hie_ident_range_const_1(self,args):
+        '''
+        hierarchical_identifier_range_const ::= identifier LBRACKET_constant_range_expression_RBRACKETs
+        LBRACKET_constant_range_expression_RBRACKETs ::= LBRACKET_constant_range_expression_RBRACKETs LBRACKET constant_range_expression RBRACKET
+        LBRACKET_constant_range_expression_RBRACKETs ::= 
+        '''
+        if len(args)==0:
+            return AST('None',[])
+        elif len(args)==2:
+            return AST('ident_and_range',[args[0],args[1]])
+        else:
+            return AST('More',[args[0],args[2]])
+
+    def p_const_range_exp(self,args):
+        '''
+        constant_range_expression ::= constant_expression COLON_lsb_constant_expression_opt
+        '''
+        return AST('RANGE',[args[0],args[1]] )
+
+
+    def p_const_range_exp_1(self,args):
+        '''
+        COLON_lsb_constant_expression_opt ::= COLON lsb_constant_expression
+        COLON_lsb_constant_expression_opt ::=
+        '''
+        if len(args)==0:
+            return AST('None',[])
+        else:
+            return AST('More',[args[1]])
+
+    def p_exp_nlr_1(self,args):
+        '''
+        expression_nlrs ::= expression_nlrs expression_nlr
+        expression_nlrs ::= 
+        '''
+        if len(args)==0:
+            return AST('None',[])
+        else:
+            return AST('More',[args[0],args[1]])
+    
+    def p_exp_nlr_2(self,args):
+        '''
+        expression_nlr ::=  binary_operator expression
+        expression_nlr ::=  QUES expression COLON expression
+        '''
+        if len(args)==2:
+            return AST('UNION',[args[0],args[1]])
+        else:
+            return AST('Ques',[args[1],args[3]])
+
+    def p_binary(self,args):
+        '''
+        binary_operator ::= BINOP
+        binary_operator ::= PLUS
+        binary_operator ::= MINUS
+        '''
+        return AST('cal_op',[args[0]])
+
+    def p_always_top(self,args):
+        '''
+        always_construct ::= ALWAYS statement
+        '''
+        return AST('ALWAYS',[args[1]])
+
+    def p_stmt_1(self,args):
+        '''
+        statement ::= procedural_timing_control_statement
+        '''
+        return AST('Time_control',[args[0]])
+
+    def p_stmt_1_1(self,args):
+        '''
+        procedural_timing_control_statement ::= event_control statement_or_null
+        '''
+        return AST('Time_control_1',[args[0],args[1]])
+
+    def p_always_top(self,args):
+        '''
+        event_control ::= AT LPAREN event_expression RPAREN
+
+        ##dor!!! STAR must be caution
+        event_control ::= AT LPAREN BINOP RPAREN
+        event_control ::= AT BINOP
+        '''
+        if len(args)>2:
+            return AST('Trigger',[args[2],AST('TriggerEnd')])
+        return AST('Trigger_any')
+
+    def p_m_g_items(self,args):
+        '''
+        module_or_generate_items ::= module_or_generate_items module_or_generate_item
+        module_or_generate_items ::= 
+
+        statements ::= statements statement
+        statements ::= 
+        '''
+        if len(args)>0:
+            return AST('More',[args[0],args[1]])
+
+    def p_single_opt(self,args):
+        '''
+        statement_or_null ::= statement?
+        expression_opt ::= expression?
+        '''
+        if len(args)>0 :
+            return AST('single',[args[0]])
+
+    def p_stmt_2(self,args):
+        '''
+        statement ::= seq_block
+        '''
+        return AST('BLOCK',[args[0]])
+
+    def p_seq_block(self,args):
+        '''
+        ## [COLON block_identifier block_item_declaration* ]
+        seq_block ::= BEGIN statements ENDs
+        '''
+        return AST
+
+    def p_even_expr(self,args):
+        '''
+        event_expression ::= POSEDGE expression
+        '''
+        return AST('posedge',[args[1]])
+
+    def p_block_assign(self,args):
+        '''
+        ##!!! great ->    [LPAREN expression (COMMA expression)*   RPAREN] ['<=' [delay_or_event_control] [expression] ] 
+        blocking_assignment ::= variable_lvalue  great2_opt SEMICOLON
+        '''
+        if len(args)>0:
+            return AST('More',[args[0],args[1]])
+
     def p_python_grammar(self, args):
         ''' 
         conditional_generate_construct ::= if_generate_construct
@@ -557,71 +705,25 @@ class VeriSimParser(GenericParser):
         case_generate_item ::= DEFAULT COLON generate_block_or_null
 
         COLON_generate_block_identifier_opt ::= COLON generate_block_identifier
-        generate_block ::= BEGIN COLON_generate_block_identifier_opt module_or_generate_item* END 
+        generate_block ::= BEGIN COLON_generate_block_identifier_opt module_or_generate_items END 
 
         generate_block_or_null ::= generate_block
         generate_block_or_null ::= module_or_generate_item
         generate_block_or_null ::= SEMICOLON
         
-        initial_construct ::= INITIAL statement
-        always_construct ::= ALWAYS statement
-
         procedural_continuous_assignments ::= ASSIGN variable_assignment
         variable_assignment ::= variable_lvalue IS_EQUAL expression
-        ## [COLON block_identifier block_item_declaration* ]
-        seq_block ::= BEGIN COLON_block_identifier_block_item_declarations_opt statements END
-
-        statements ::= statements statement
-        statements ::= 
-
-        COLON_block_identifier_block_item_declarations_opt ::= COLON block_identifier block_item_declarations
-        COLON_block_identifier_block_item_declarations_opt ::= 
-
-        block_item_declarations ::= block_item_declarations block_item_declaration
-        block_item_declarations ::= 
-
-        ##!!! great ->    [LPAREN expression (COMMA expression)*   RPAREN] ['<=' [delay_or_event_control] [expression] ] 
-        blocking_or_nonblocking_assignment_or_task_enable ::= variable_lvalue great1_opt great2_opt SEMICOLON
-        great1_opt ::= LPAREN expression COMMA_expressions   RPAREN
+        
+        
+        
         COMMA_expressions ::= COMMA_expressions COMMA expression
         COMMA_expressions ::= 
-        great1_opt ::= 
 
         ##dor COMP_OP MUSTbe '<=' ?
-        great2_opt ::= COMP_OP delay_or_event_control_opt expression_opt
-        great2_opt ::= IS_EQUAL delay_or_event_control_opt expression_opt
+        great2_opt ::= COMP_OP  expression_opt
+        great2_opt ::= IS_EQUAL  expression_opt
         great2_opt ::= 
 
-        expression_opt ::= expression?
-
-        delay_or_event_control_opt ::= delay_or_event_control?
-
-        statement ::= blocking_or_nonblocking_assignment_or_task_enable
-        statement ::= case_statement
-        statement ::= conditional_statement
-        statement ::= loop_statement
-        statement ::= procedural_continuous_assignments SEMICOLON
-        statement ::= seq_block
-        statement ::= SEMICOLON
-
-        statement ::= procedural_timing_control_statement
-        procedural_timing_control_statement ::= event_control statement_or_null
-
-        statement_or_null ::= statement?
-        delay_or_event_control ::=  event_control
-
-        event_control ::= AT LPAREN event_expression RPAREN
-
-        ##dor!!! STAR must be caution
-        event_control ::= AT LPAREN BINOP RPAREN
-        event_control ::= AT BINOP
-
-        event_expression ::= POSEDGE expression event_expression_nlr
-        event_expression ::= expression event_expression_nlr
-
-        event_expression_nlr ::=  event_expression_nlr OR event_expression
-        event_expression_nlr ::=   event_expression_nlr COMMA event_expression 
-        event_expression_nlr ::= 
         conditional_statement  ::= IF LPAREN expression RPAREN statement_or_null ELSE_statement_or_null_opt
         ELSE_statement_or_null_opt ::= ELSE statement_or_null
         ELSE_statement_or_null_opt ::= 
@@ -629,21 +731,14 @@ class VeriSimParser(GenericParser):
 
         ## case item
         case_item ::= expression COMMA_expressions  COLON statement_or_null
-        COMMA_expressions ::= COMMA_expressions COMMA_expression
-        COMMA_expression ::= COMMA expression
+        COMMA_expression_s ::= COMMA_expression_s COMMA expression
 
         case_item ::= DEFAULT COLON? statement_or_null
 
         loop_statement ::= FOR LPAREN variable_assignment SEMICOLON expression SEMICOLON variable_assignment RPAREN statement   
         
         constant_expression_nlrs ::= constant_expression_nlrs binary_operator constant_expression
-        constant_expression_nlrs ::=
-        
-        
-        expression_nlrs ::= expression_nlrs expression_nlr
-        expression_nlrs ::= 
-        expression_nlr ::=  binary_operator expression
-        expression_nlr ::=  QUES expression COLON expression
+        constant_expression_nlrs ::=    
         
         ### constant_primary ::= string
 
@@ -671,8 +766,6 @@ class VeriSimParser(GenericParser):
         COMMA_constant_expressions ::=  COMMA_constant_expressions COMMA constant_expression
         COMMA_constant_expressions ::= 
 
-        
-
         primary ::= number
         ### primary ::= string
         ## primary ::= LBRACE expression [ COMMA expression (COMMA expression)* ] RBRACE
@@ -685,23 +778,13 @@ class VeriSimParser(GenericParser):
         LBRACE_expression_COMMA_expressions_RBRACE_opt ::= LBRACE expression COMMA_expressions RBRACE
         LBRACE_expression_COMMA_expressions_RBRACE_opt ::= 
 
-        
-
-
-        
-
         ## hierarchical_identifier_range_const ::= identifier (DOT identifier [ LBRACKET constant_range_expression RBRACKET ] )*
         hierarchical_identifier_range_const ::= identifier DOT_identifier_LBRACKET_constant_range_expression_RBRACKET_opt_s
         DOT_identifier_LBRACKET_constant_range_expression_RBRACKET_opt_s ::= DOT_identifier_LBRACKET_constant_range_expression_RBRACKET_opt_s DOT identifier LBRACKET_constant_range_expression_RBRACKET_opt
         DOT_identifier_LBRACKET_constant_range_expression_RBRACKET_opt_s ::= 
         LBRACKET_constant_range_expression_RBRACKET_opt ::= LBRACKET constant_range_expression RBRACKET
 
-        hierarchical_identifier_range_const ::= identifier LBRACKET_constant_range_expression_RBRACKETs
-        LBRACKET_constant_range_expression_RBRACKETs ::= LBRACKET_constant_range_expression_RBRACKETs LBRACKET constant_range_expression RBRACKET
-        LBRACKET_constant_range_expression_RBRACKETs ::= 
-
-        variable_lvalue ::= hierarchical_identifier_range
-        variable_lvalue ::= LBRACE variable_lvalue COMMA_variable_lvalues RBRACE
+        
         COMMA_variable_lvalues ::= COMMA_variable_lvalues COMMA variable_lvalue
         COMMA_variable_lvalues ::= 
 
@@ -741,10 +824,6 @@ class VeriSimParser(GenericParser):
         
         unary_operator_opt ::= unary_operator
         unary_operator_opt ::= 
-
-        binary_operator ::= BINOP
-        binary_operator ::= PLUS
-        binary_operator ::= MINUS
 
         generate_block_identifier ::= identifier
         unary_operator ::= PLUS
