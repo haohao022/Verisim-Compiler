@@ -21,7 +21,7 @@ module adder(
 
     always @(posedge Clk) begin
 		if (En) begin
-			sum_s=A+B;
+			sum_s<=A+B;
 		end		
 	end
 	

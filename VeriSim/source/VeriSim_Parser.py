@@ -324,6 +324,7 @@ class VeriSimParser(GenericParser):
         module_or_generate_item_declaration ::= integer_declaration
         module_or_generate_item_declaration ::= genvar_declaration
         ##---- always statement
+
         statement ::= blocking_assignment
         statement ::= case_statement
         statement ::= conditional_statement
@@ -383,7 +384,7 @@ class VeriSimParser(GenericParser):
         '''
         reg_declaration ::= REG signed_opt range_opt list_of_variable_identifiers SEMICOLON
         '''
-        return AST('REG',[args[2],args[3],AST('dec_reg_flag')])
+        return AST('REG',[args[2],args[3],AST('dec_reg_flag',[None])])
 
     def p_net_wire_1(self,args):
         '''
@@ -631,7 +632,7 @@ class VeriSimParser(GenericParser):
         '''
         return AST('Time_control_1',[args[0],args[1]])
 
-    def p_always_top(self,args):
+    def p_always_top_1(self,args):
         '''
         event_control ::= AT LPAREN event_expression RPAREN
 
@@ -640,8 +641,8 @@ class VeriSimParser(GenericParser):
         event_control ::= AT BINOP
         '''
         if len(args)>2:
-            return AST('Trigger',[args[2],AST('TriggerEnd')])
-        return AST('Trigger_any')
+            return AST('Trigger',[args[2],AST('TriggerEnd',[None])])
+        return AST('Trigger_any',[None])
 
     def p_m_g_items(self,args):
         '''
@@ -666,16 +667,16 @@ class VeriSimParser(GenericParser):
         '''
         statement ::= seq_block
         '''
-        return AST('BLOCK',[args[0]])
+        return AST('single',[args[0]])
 
     def p_seq_block(self,args):
         '''
         ## [COLON block_identifier block_item_declaration* ]
-        seq_block ::= BEGIN statements ENDs
+        seq_block ::= BEGIN statements END
         '''
-        return AST
+        return AST('BLOCK',[args[1]])
 
-    def p_even_expr(self,args):
+    def p_event_expr(self,args):
         '''
         event_expression ::= POSEDGE expression
         '''
@@ -683,12 +684,40 @@ class VeriSimParser(GenericParser):
 
     def p_block_assign(self,args):
         '''
-        ##!!! great ->    [LPAREN expression (COMMA expression)*   RPAREN] ['<=' [delay_or_event_control] [expression] ] 
+        ##  great ->    [LPAREN expression (COMMA expression)*   RPAREN] ['<=' [delay_or_event_control] [expression] ] 
         blocking_assignment ::= variable_lvalue  great2_opt SEMICOLON
         '''
         if len(args)>0:
             return AST('More',[args[0],args[1]])
 
+    def p_block_assign_1(self,args):
+        '''
+        ##dor COMP_OP MUSTbe '<=' ?
+        great2_opt ::= COMP_OP  expression_opt
+        great2_opt ::= IS_EQUAL  expression_opt
+        great2_opt ::= 
+        '''
+        if len(args)>0:
+            return AST('More',[args[1]])
+        
+
+    def p_if_Enable(self,args):
+        '''
+        conditional_statement  ::= IF LPAREN expression RPAREN statement_or_null ELSE_statement_or_null_opt
+        '''
+        return AST('enable',[args[2],args[4]])
+
+    def p_var_left(self,args):
+        '''
+        variable_lvalue ::= hierarchical_identifier_range
+        variable_lvalue ::= LBRACE variable_lvalue COMMA_variable_lvalues RBRACE
+        '''
+        if len(args)>1:
+            return AST('More',[args[0],args[1]])
+        else :
+            return AST('single',[args[0]])
+
+    
     def p_python_grammar(self, args):
         ''' 
         conditional_generate_construct ::= if_generate_construct
@@ -714,19 +743,9 @@ class VeriSimParser(GenericParser):
         procedural_continuous_assignments ::= ASSIGN variable_assignment
         variable_assignment ::= variable_lvalue IS_EQUAL expression
         
-        
-        
         COMMA_expressions ::= COMMA_expressions COMMA expression
         COMMA_expressions ::= 
 
-        ##dor COMP_OP MUSTbe '<=' ?
-        great2_opt ::= COMP_OP  expression_opt
-        great2_opt ::= IS_EQUAL  expression_opt
-        great2_opt ::= 
-
-        conditional_statement  ::= IF LPAREN expression RPAREN statement_or_null ELSE_statement_or_null_opt
-        ELSE_statement_or_null_opt ::= ELSE statement_or_null
-        ELSE_statement_or_null_opt ::= 
         case_statement  ::= CASE LPAREN expression RPAREN case_item+ ENDCASE    
 
         ## case item
@@ -887,6 +906,8 @@ class VeriSimParser(GenericParser):
         COMMA_net_identifier_dor_dim_and_exps ::= COMMA_net_identifier_dor_dim_and_exps COMMA net_identifier dor_dim_and_exp
         COMMA_net_identifier_dor_dim_and_exps ::= 
 
+        ELSE_statement_or_null_opt ::= ELSE statement_or_null
+        ELSE_statement_or_null_opt ::= 
     '''
 
 
