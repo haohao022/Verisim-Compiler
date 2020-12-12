@@ -613,7 +613,7 @@ class VeriSimParser(GenericParser):
         expression_nlr ::=  QUES expression COLON expression
         '''
         if len(args)==2:
-            return AST('UNION',[args[0],args[1]])
+            return AST('UNION',[args[0],args[1],AST('do_cal',[None])])
         else:
             return AST('Ques',[args[1],args[3]])
 
@@ -699,7 +699,7 @@ class VeriSimParser(GenericParser):
         blocking_assignment ::= variable_lvalue  great2_opt SEMICOLON
         '''
         if len(args)>0:
-            return AST('More',[args[0],args[1]])
+            return AST('BLOCK_ASSIGN',[args[0],AST('B_LEFT_OVER',[None]) , args[1]])
 
     def p_block_assign_1(self,args):
         '''
@@ -716,7 +716,7 @@ class VeriSimParser(GenericParser):
         '''
         conditional_statement  ::= IF LPAREN expression RPAREN statement_or_null ELSE_statement_or_null_opt
         '''
-        return AST('enable',[args[2],args[4]])
+        return AST('enable',[args[2],args[4],AST('enableEnd',[None])])
 
     def p_var_left(self,args):
         '''
@@ -860,7 +860,7 @@ class VeriSimParser(GenericParser):
         unary_operator ::= MINUS
         unary_operator ::= QUES
 
-        ## unused -----
+        ## tmp cannot semantic -----
         ### generate
         generate_region ::= GENERATE module_or_generate_item* ENDGENERATE
         genvar_declaration ::= GENVAR list_of_genvar_identifiers SEMICOLON

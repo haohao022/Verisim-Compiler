@@ -17,11 +17,19 @@ class SignTable(GenericToken):
     
     def check_dup(self, name):
         for item in self.rv :
-            if( item.getname() == name ):
+            if  item.getname() == name :
                 print("ERROR: Dormouse . duplicate ident for wire/ reg ")
                 exit(0)
         return 
+    def check_reg(self,name):
+        for item in self.rv :
+            if  item.getname() == name and  item.cur_type != 'REG':
+                print("ERROR: Dormouse . cant b_assign to a wire or const ")
 
+    def getsize(self,name):
+        for item in self.rv :
+            if  item.getname() == name :
+                return item.get_size()
 class Sign:
 
     def __init__(self, kind , name ,upper=None ,typer=None):
@@ -44,10 +52,13 @@ class Sign:
     def add_reg(self):
     #    self.subtype = 'REG'
         pass
-
+    
+    def get_size(self):
+        return self.size()
+    
     def getname(self):
         return self.name 
-        
+
     def __str__(self):
         return 'Token %s: %r ' %( self.kind, self.attr)
     

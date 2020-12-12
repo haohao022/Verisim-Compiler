@@ -95,10 +95,14 @@ class Interpret(GenericASTTraversal):
         ##----- used in assign
         self.left_var = ''
         self.right_var =''
-        ## 
+        ##----- used in always ,containg enable bit ( if )
+        ##----- now only support single_bit enable 
+        self.check_reg_flag = True
         self.alw_flag =False
         self.glo_trigger_flag = False
         self.trigger_rv = []
+        self.glo_en_flag =False
+        self.enable_rv = []
 
     def check_is_decla(self) :
         return  self.dec_flag
@@ -140,6 +144,9 @@ class Interpret(GenericASTTraversal):
     
     def n_NAME(self,node):
         self.cur_name = node.name
+
+        if self.check_reg_flag ==True:
+            self.SignTable.check_reg()
         if self.check_is_decla():
             self.new_decla()
             self.prune()
@@ -148,7 +155,8 @@ class Interpret(GenericASTTraversal):
 
         if self.glo_trigger_flag == True :
             self.trigger_rv.append(node.name)
-
+        if self.glo_en_flag == True :
+            self.enable_rv.append(node.name)
 
                 
     
@@ -161,7 +169,7 @@ class Interpret(GenericASTTraversal):
 
         sum_width =0
         for item in self.tmp_rv :
-            sum_width =sum_width + item.getsize()
+            sum_width =sum_width + self.SignTable.getsize(item)
         self.cur_msb = sum_width 
         self.cur_lsb = 0
         self.cur_kind = 'NORMAL'
@@ -176,13 +184,13 @@ class Interpret(GenericASTTraversal):
         self.com_flag = False 
         self.tmp_rv.clear()
 
-    def n_ASSIN_OVER(self,node):
+    def n_ASSIGN_OVER(self,node):
         ##todo: assign 
 
         left = self.left_var
         right = self.cur_name 
 
-
+        
         pass     
 
     def n_LEFT_OVER(self,node):
@@ -261,6 +269,46 @@ class Interpret(GenericASTTraversal):
 
     def n_TriggerEnd(self,node):
         self.glo_trigger_flag = False
+        self.trigger_rv.clear()
+
+    def n_enable(self,node):
+        self.glo_en_flag = True
+    
+    def n_enableEnd(self,node):
+        self.glo_en_flag = False
+        self.enable_rv.clear()
+
+    def n_B_ASSIGN(self,node):
+        self.check_reg_flag =True
+
+    def n_B_LEFT_OVER(self,node):
+        self.check_reg_flag = False 
+
+    def n_cal_op(self,node):
+        self.cal_op = node.name 
+        self.op_l = self.cur_name
+
+    def n_do_cal(self,node):
+        left = self.op_l
+        right = self.cur_name
+        tmp_wire = self.gen_tmp()
+
+        ##todo
+
+        
+
+        sum_width =0
+
+        for item in [left,right] :
+            sum_width =max(sum_width ,self.SignTable.getsize(item))
+        self.cur_msb = sum_width 
+        self.cur_lsb = 0
+        self.cur_kind = 'NORMAL'
+        self.cur_type = 'WIRE'
+        
+        self.dec_flag = True ## generate a tmp_wire ,we need a permission
+        self.cur_name = tmp_wire
+        self.new_decla()
         
 
     def default(self, node):
