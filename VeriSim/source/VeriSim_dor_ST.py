@@ -23,7 +23,7 @@ class SignTable(GenericToken):
         return 
     def check_reg(self,name):
         for item in self.rv :
-            if  item.getname() == name and  item.cur_type != 'REG':
+            if  item.getname() == name and  item.type != 'REG':
                 print("ERROR: Dormouse . cant b_assign to a wire or const ")
 
     def getsize(self,name):
@@ -54,7 +54,7 @@ class Sign:
         pass
     
     def get_size(self):
-        return self.size()
+        return self.size
     
     def getname(self):
         return self.name 

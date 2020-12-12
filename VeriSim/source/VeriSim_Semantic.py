@@ -11,8 +11,18 @@ from VeriSim_dor_ST  import Sign ,SignTable
 
 from collections import namedtuple
 
+from backend.Component import *
+
 DEFAULT_DEBUG = {'rules': False, 'transition': False, 'reduce' : True,
                  'errorstack': 'full', 'context': False, 'dups': False}
+
+class ComponentSet :
+
+    def __init__(self):
+        self.rv = []
+
+    def append(self,node):
+        self.rv.append(node)
 
 
 class Interpret(GenericASTTraversal):
@@ -69,6 +79,8 @@ class Interpret(GenericASTTraversal):
         
     def __init__(self, ast):
         GenericASTTraversal.__init__(self, ast)
+        self.Comp_set = ComponentSet()
+
         self.SignTable = SignTable()
         self.cur_kind = ''
         self.cur_name = ''
@@ -97,7 +109,7 @@ class Interpret(GenericASTTraversal):
         self.right_var =''
         ##----- used in always ,containg enable bit ( if )
         ##----- now only support single_bit enable 
-        self.check_reg_flag = True
+        self.check_reg_flag = False
         self.alw_flag =False
         self.glo_trigger_flag = False
         self.trigger_rv = []
@@ -120,6 +132,22 @@ class Interpret(GenericASTTraversal):
         #     st.add_port(self.wire_type)
 
         self.SignTable.add(st)
+        
+        #----new pin
+        new_pin = None
+        if self.cur_kind=='INPUT':
+            new_pin = Pin(st.get_size() , False)
+            self.Comp_set.append(new_pin)
+        elif self.cur_kind =='OUTPUT':
+            new_pin = Pin(st.get_size(),False)
+            self.Comp_set.append(new_pin)
+        
+        #--------------
+        ##----new reg
+        if self.cur_type =='REG':
+        
+        
+        #----
 
 
         self.cur_msb = 0
@@ -146,7 +174,7 @@ class Interpret(GenericASTTraversal):
         self.cur_name = node.name
 
         if self.check_reg_flag ==True:
-            self.SignTable.check_reg()
+            self.SignTable.check_reg(node.name)
         if self.check_is_decla():
             self.new_decla()
             self.prune()
@@ -161,7 +189,7 @@ class Interpret(GenericASTTraversal):
                 
     
     def n_COMBINE(self,node):
-        self.conbine_flag = True
+        self.com_flag = True
 
     def n_COMBINE_OVER(self,node):
         
@@ -179,7 +207,10 @@ class Interpret(GenericASTTraversal):
         self.cur_name = tmp_wire
         self.new_decla()
 
-        ##todo: split
+        ##-- split
+        new_split = Splitter(tmp_wire, self.tmp_rv ,None  )
+        ##todo :splitter toward?
+        ##-----------
 
         self.com_flag = False 
         self.tmp_rv.clear()
@@ -190,7 +221,7 @@ class Interpret(GenericASTTraversal):
         left = self.left_var
         right = self.cur_name 
 
-        
+
         pass     
 
     def n_LEFT_OVER(self,node):
@@ -285,15 +316,14 @@ class Interpret(GenericASTTraversal):
         self.check_reg_flag = False 
 
     def n_cal_op(self,node):
-        self.cal_op = node.name 
+        self.cal_op = node.data[0].name 
         self.op_l = self.cur_name
+        self.prune()
 
     def n_do_cal(self,node):
         left = self.op_l
         right = self.cur_name
         tmp_wire = self.gen_tmp()
-
-        ##todo
 
         
 
@@ -306,10 +336,26 @@ class Interpret(GenericASTTraversal):
         self.cur_kind = 'NORMAL'
         self.cur_type = 'WIRE'
         
+        ##--- binary op
+        new_ari = None
+        if self.op_l == 'PLUS' :
+            new_ari = Adder()
+        elif self.op_l == 'MINUS':
+            new_ari = Subtractor()
+        elif self.op_l == 'MULTI':
+            new_ari = Multiplier()
+        elif self.op_l == 'DIV':
+            new_ari = Divider()
+        self.Comp_set.append(new_ari)
+        ## todo : add port of these 
+        ##-------------------
+
+
         self.dec_flag = True ## generate a tmp_wire ,we need a permission
         self.cur_name = tmp_wire
         self.new_decla()
-        
+    
+
 
     def default(self, node):
         pass
