@@ -144,9 +144,10 @@ class Interpret(GenericASTTraversal):
         
         #--------------
         ##----new reg
+        new_reg = None
         if self.cur_type =='REG':
-        
-        
+            new_reg = Register(st.get_size(),11)
+        ##todo: add trigger
         #----
 
 
@@ -159,7 +160,7 @@ class Interpret(GenericASTTraversal):
 
     def traverse(self,node):
         self.preorder(node)
-        return 'ok'
+        return self.Comp_set
 
     # Rules for interpreting nodes based on their AST node type
     def n_integer(self, node):
@@ -338,14 +339,14 @@ class Interpret(GenericASTTraversal):
         
         ##--- binary op
         new_ari = None
-        if self.op_l == 'PLUS' :
-            new_ari = Adder()
-        elif self.op_l == 'MINUS':
-            new_ari = Subtractor()
-        elif self.op_l == 'MULTI':
-            new_ari = Multiplier()
-        elif self.op_l == 'DIV':
-            new_ari = Divider()
+        if self.cal_op == '+' :
+            new_ari = Adder(4)
+        elif self.cal_op == '-' :
+            new_ari = Subtractor(4)
+        elif self.cal_op == '*' :
+            new_ari = Multiplier(4)
+        elif self.cal_op == '/' :
+            new_ari = Divider(4)
         self.Comp_set.append(new_ari)
         ## todo : add port of these 
         ##-------------------
