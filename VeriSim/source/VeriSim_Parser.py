@@ -177,7 +177,7 @@ class VeriSimParser(GenericParser):
         '''
         identifier ::= NAME
         '''
-        return AST('NAME',[args[0]])
+        return AST('single',[args[0]])
 
 
     def p_port_output_decla(self,args):
@@ -425,7 +425,7 @@ class VeriSimParser(GenericParser):
         list_of_variable_identifiers ::= port_identifier IS_EQUAL_constant_expression_opt COMMA_port_identifier_IS_EQUAL_constant_expression_opt_s
         '''
         ## ignore more commas
-        if args[1]==None:
+        if args[1].kind == 'None' :
             return AST('single',[args[0]])
         else :
             return AST('plex',[args[0],args[1]] )
@@ -445,6 +445,8 @@ class VeriSimParser(GenericParser):
         '''
         if len(args)>0 :
             return AST('EQUAL',[args[1]])
+        else :
+            return AST('None',[None])
 
     def p_assign_dec(self,args):
         '''
@@ -476,7 +478,7 @@ class VeriSimParser(GenericParser):
         '''
         net_assignment ::= net_lvalue IS_EQUAL expression
         '''
-        return AST('ASSIGN_2',[args[0],args[2]])
+        return AST('ASSIGN_2',[args[0],AST('LEFT_OVER',[None]), args[2],AST('ASSIGN_OVER',[None])])
 
     def p_assign_dec_3_0(self,args):
         '''
@@ -486,7 +488,7 @@ class VeriSimParser(GenericParser):
         if len(args)==1:
             return AST('NET_LEFT',[args[0]] )
         else :
-            return AST('COMBINE',[args[1],args[2]])
+            return AST('COMBINE',[args[1],args[2],AST('COMBINE_OVER',[None])])
 
     def p_assign_dec_3_0_2(self,args):
         '''
@@ -504,7 +506,10 @@ class VeriSimParser(GenericParser):
         expression ::= unary_operator_opt primary  expression_nlrs
         '''
         # 目前忽略operator
-        return AST('EXPR',[args[1],args[2]])
+        if args[1]=='single' and args[2].kind=='None' :
+            return AST('single',[args[1]])
+        else :
+            return AST('EXPR',[args[1],args[2]])
 
     def p_primary_1(self,args):
         '''
@@ -517,7 +522,10 @@ class VeriSimParser(GenericParser):
         if len(args)==0:
             return AST('None',None)
         else :
-            return AST('single',[args[0]])
+            if args[1].kind == 'None' :
+                return AST('single',[args[0]])
+            else :
+                return AST('More',[args[0],args[1]])
     
     def p_hie_ident_range_1(self,args):
         '''
@@ -526,7 +534,10 @@ class VeriSimParser(GenericParser):
         
         '''
         if len(args)==2:
-            return AST('More',[args[0],args[1]])
+            if args[1].kind == 'None' :
+                return AST('single',[args[0]])
+            else :
+                return AST('More',[args[0],args[1]])
 
     def p_hie_ident_range_1_2(self,args):
         '''

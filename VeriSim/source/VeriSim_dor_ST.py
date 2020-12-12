@@ -14,7 +14,13 @@ class SignTable(GenericToken):
         assert isinstance(node, Sign)
         self.rv.append(node)        
         pass
-
+    
+    def check_dup(self, name):
+        for item in self.rv :
+            if( item.getname() == name ):
+                print("ERROR: Dormouse . duplicate ident for wire/ reg ")
+                exit(0)
+        return 
 
 class Sign:
 
@@ -39,5 +45,9 @@ class Sign:
     #    self.subtype = 'REG'
         pass
 
+    def getname(self):
+        return self.name 
+        
     def __str__(self):
         return 'Token %s: %r ' %( self.kind, self.attr)
+    

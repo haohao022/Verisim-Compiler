@@ -16,6 +16,11 @@ DEFAULT_DEBUG = {'rules': False, 'transition': False, 'reduce' : True,
 
 
 class Interpret(GenericASTTraversal):
+    
+    tmp_wire_counter =0 
+    def gen_tmp(self):
+        Interpret.tmp_wire_counter +=1
+        return '_W_tmp'+str(Interpret.tmp_wire_counter)
 
     # Override
     def preorder(self, node=None):
@@ -69,15 +74,31 @@ class Interpret(GenericASTTraversal):
         self.cur_name = ''
         self.cur_module =''
         self.cur_type =''
+        ##----used in range
         self.sb_flag =False
         self.cur_msb = 0
         self.cur_lsb = 0
         self.size = 0
-        self.reg_flag = False
+        ##----------------
+        ##------ used in port/normal_wire declaration 
         self.wire_type = ''  # wire or reg   in the port/normal net
 
-        self.dec_flag =False 
-        self.reg_flag =False
+        self.dec_flag =False # used in input and output declare
+        self.reg_flag =False # used in input and output declare
+        ##----------------
+        self.cur_num = 0
+
+        ##------
+        self.com_flag = False  # used in combine
+        self.tmp_rv = []
+
+        ##----- used in assign
+        self.left_var = ''
+        self.right_var =''
+        ## 
+        self.alw_flag =False
+        self.glo_trigger_flag = False
+        self.trigger_rv = []
 
     def check_is_decla(self) :
         return  self.dec_flag
@@ -122,8 +143,50 @@ class Interpret(GenericASTTraversal):
         if self.check_is_decla():
             self.new_decla()
             self.prune()
+        if self.com_flag :
+            self.tmp_rv.append(node.name)
+
+        if self.glo_trigger_flag == True :
+            self.trigger_rv.append(node.name)
+
+
+                
+    
+    def n_COMBINE(self,node):
+        self.conbine_flag = True
+
+    def n_COMBINE_OVER(self,node):
         
-        
+        tmp_wire = self.gen_tmp()
+
+        sum_width =0
+        for item in self.tmp_rv :
+            sum_width =sum_width + item.getsize()
+        self.cur_msb = sum_width 
+        self.cur_lsb = 0
+        self.cur_kind = 'NORMAL'
+        self.cur_type = 'WIRE'
+         
+        self.dec_flag = True ## generate a tmp_wire ,we need a permission
+        self.cur_name = tmp_wire
+        self.new_decla()
+
+        ##todo: split
+
+        self.com_flag = False 
+        self.tmp_rv.clear()
+
+    def n_ASSIN_OVER(self,node):
+        ##todo: assign 
+
+        left = self.left_var
+        right = self.cur_name 
+
+
+        pass     
+
+    def n_LEFT_OVER(self,node):
+        self.left_var = self.cur_name
 
     def n_multiply(self, node):
         node.attr = int(node[0].attr) * int(node[1].attr)
@@ -173,10 +236,32 @@ class Interpret(GenericASTTraversal):
     
     def n_NUMBER(self,node):
         if self.sb_flag and (self.cur_msb==0):
-            self.cur_msb = int(node.name)
+            self.cur_msb = int(node.data[0].name)
         else :
-            self.cur_lsb = int(node.name)
+            self.cur_lsb = int(node.data[0].name)
+        self.cur_num = node.data[0].name
+        self.prune()
 
+    def n_REG(self,node):
+        self.reg_flag = True
+
+    def n_dec_reg_flag(self,node):
+        self.cur_kind = 'NORMAL'
+        self.wire_type='REG'
+        self.dec_flag = True
+        self.SignTable.check_dup(self.cur_name)
+        self.new_decla()
+
+    ##----used in always block
+    def n_ALWAYS(self,node):
+        self.alw_flag = True
+    
+    def n_Trigger(self,node):
+        self.glo_trigger_flag =True
+
+    def n_TriggerEnd(self,node):
+        self.glo_trigger_flag = False
+        
 
     def default(self, node):
         pass
