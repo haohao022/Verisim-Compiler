@@ -117,6 +117,15 @@ class Port(object):
         self.name = name
         self.linkedPorts = []
 
+    @classmethod
+    def link(cls, src_comp: Comp, src_port: str,
+             dst_comp: Comp, dst_port: str):
+        """
+        Note that port in the link should be in the right order since data
+        stream between the ports has direction.
+        """
+        pass
+
 
 # Below are Comp.Lib.WIRING classes, including Splitter, Pin, Constant,
 # Bit Extender.
