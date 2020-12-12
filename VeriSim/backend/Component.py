@@ -88,7 +88,6 @@ class Comp(object):
         pass
 
 
-# TODO: width <= 32
 class Port(object):
     """
     Each instance of this class represents a port on the components of the
@@ -111,6 +110,8 @@ class Port(object):
         COUT = "cout"       # carry out port
 
     def __init__(self, width: int, loc=None, name=None):
+        assert (width >= 0 and width <= 32), \
+               "Port width {} out of range.".format(width)
         self.width = width
         self.loc = loc
         self.name = name
@@ -119,11 +120,10 @@ class Port(object):
 
 # Below are Comp.Lib.WIRING classes, including Splitter, Pin, Constant,
 # Bit Extender.
-# TODO: port, width of splited wire
 class Splitter(Comp):
     """
     Splitter class.
-    Ports: combined, out0 ~ outN(N = fanout)
+    Ports: combined, out0 ~ outN(N = len(fanout))
     """
 
     class Appearance(object):
@@ -138,11 +138,17 @@ class Splitter(Comp):
         CENTERED = "center"
         LEGACY = "legacy"
 
-    # Parameter "combine" determines whether the Splitter is used as a combiner
-    # or a splitter.
-    def __init__(self, fanout, incoming, combine:bool):
+    def __init__(self, fanout_tuple: tuple, incoming, combine: bool):
+        """
+        Parameter 
+        combine: determines whether the Splitter is used as a combiner 
+            or a splitter.
+        fanout_tuple: tuple consist of width of each fanout in appropriate order.
+            Numbers in the front of the tuple represent lower bits of the splitted
+            value.
+        """
         super(Splitter, self).__init__(Comp.Name.SPLITTER, Comp.Lib.WIRING)
-        self.fanout = fanout
+        self.fanout = len(fanout_tuple)
         self.incoming = incoming
         if combine == False:
             self.appear = Splitter.Appearance.LEFT_HANDED
@@ -152,6 +158,8 @@ class Splitter(Comp):
             self.facing = Comp.Facing.WEST
         # Create ports for Splitter components.
         self.ports.setdefault("combined", Port(incoming))
+        for i in range(self.fanout):
+            self.ports.setdefault(Port.Tag.OUT + str(i), Port(fanout_tuple[i]))
 
 
 # TODO?: three state, pull behavior
@@ -175,7 +183,6 @@ class Pin(Comp):
         self.ports.setdefault("inout", Port(width))
 
 
-# TODO: consistency between vlaue and width.
 class Constant(Comp):
     """
     Constant class.
@@ -183,11 +190,37 @@ class Constant(Comp):
     """
 
     def __init__(self, width, value, facing=Comp.Facing.EAST):
+        """
+        Parameter
+        value: value in the Constant component is treated as binary code instead
+            of a signed or unsigned integer.
+        "width" and "value" should comply with this rule:
+            - 2 ^ (width - 1) <= value <= 2 ^ width - 1.
+        While the rule is the bottom line of the logosim software, complying
+        with it can not guarantee correctness of the source code.
+        """
+        # Check consistency of with and value
+        floor = - pow(2, width - 1)
+        ceiling = pow(2, width) - 1
+        assert (value >= floor and value <= ceiling), \
+                "Parameter inconsisitency at Constant constructor, " \
+                "(width, value) = ({}, {}).".format(width, value)
+        # Construct Constant component.
         super(Constant, self).__init__(Comp.Name.CONSTANT, Comp.Lib.WIRING)
         self.width = width
         self.value = value
         # Create ports for Constant components.
         self.ports.setdefault(Port.Tag.OUT, Port(width))
+
+    def __check_consistency(self):
+        """
+        Check if a binary data with such width have the ability to represent
+        the value, so this should be called after the width and value is set.
+        """
+        floor = - pow(2, self.width - 1)
+        ceiling = pow(2, self.width) - 1
+        if self.value < floor or self.value > ceiling:
+            raise ValueError()
 
 
 class BitExtender(Comp):
@@ -350,7 +383,6 @@ class EvenParity(TwoOperandGateShape):
 
 # Below are Comp.Lib.PLEXERS classes, including Multiplexer, Demultiplexer,
 # Decoder, Bit Selector.
-# TODO: select <= 5
 class Multiplexer(Comp):
     """
     Multiplexer class.
@@ -360,6 +392,11 @@ class Multiplexer(Comp):
     def __init__(self, width, select: int, enable=False,
                  selloc=Comp.SelectLoc.BOTTOM_LEFT,
                  facing=Comp.Facing.EAST):
+        # 0 <= select <= 5
+        assert (0 <= select and select <= 5), \
+               "Parameter select {} out of range at Multiplexer constructor." \
+               .format(select)
+        # Construct Multiplexer component.
         super(Multiplexer, self).__init__(Comp.Name.MULTIPLEXER,
                                           Comp.Lib.PLEXERS)
         self.width = width
@@ -376,7 +413,6 @@ class Multiplexer(Comp):
             self.ports.setdefault(Port.Tag.EN, Port(1))
 
 
-# TODO: select <= 5
 class Demultiplexer(Comp):
     """
     Demultiplexer class.
@@ -386,6 +422,11 @@ class Demultiplexer(Comp):
     def __init__(self, width, select, enable=False,
                  selloc=Comp.SelectLoc.BOTTOM_LEFT,
                  facing=Comp.Facing.EAST):
+        # 0 <= select <= 5
+        assert (0 <= select and select <= 5), \
+               "Parameter select {} out of range at Demultiplexer" \
+               "constructor.".format(select)
+        # Construct Deultiplexer component.
         super(Demultiplexer, self).__init__(Comp.Name.DEMULTIPLEXER,
                                             Comp.Lib.PLEXERS)
         self.width = width
@@ -402,7 +443,6 @@ class Demultiplexer(Comp):
             self.ports.setdefault(Port.Tag.EN, Port(1))
 
 
-# TODO: select <= 5
 class Decoder(Comp):
     """
     Decoder class.
@@ -411,6 +451,11 @@ class Decoder(Comp):
 
     def __init__(self, select, enable=False, selloc=Comp.SelectLoc.BOTTOM_LEFT,
                  facing=Comp.Facing.EAST):
+        # 0 <= select <= 5
+        assert (0 <= select and select <= 5), \
+               "Parameter select {} out of range at Decoder constructor." \
+               .format(select)
+        # Construct Decoder component.
         super(Decoder, self).__init__(Comp.Name.DECODER, Comp.Lib.PLEXERS)
         self.select = select
         self.enable = enable
@@ -431,15 +476,20 @@ class BitSelector(Comp):
     """
 
     def __init__(self, width, group, facing=Comp.Facing.EAST):
+        # 0 <= select <= 5
+        select = ceil(log2(ceil(width / group)))
+        assert (0 <= select and select <= 5), \
+               "Parameter select {} out of range at Multiplexer constructor." \
+               .format(select)
+        # Construct Multiplexer component.
         super(BitSelector, self).__init__(Comp.Name.BITSELECTOR,
                                           Comp.Lib.PLEXERS)
         self.width = width
         self.group = group
-        sel = ceil(log2(ceil(width / group)))
         # Create ports for BitSelector components.
         self.ports.setdefault(Port.Tag.IN, Port(width))
         self.ports.setdefault(Port.Tag.OUT, Port(group))
-        self.ports.setdefault(Port.Tag.SEL, Port(sel))
+        self.ports.setdefault(Port.Tag.SEL, Port(select))
 
 
 # Below are Comp.Lib.ARITHMETIC classes, including Adder, Subtractor, 
