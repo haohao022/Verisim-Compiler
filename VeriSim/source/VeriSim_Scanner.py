@@ -11,8 +11,8 @@ from VeriSim_token import VeriSimToken
 
 import re
 RESERVED_WORDS = re.split("\s+",
-"""module endmodule input output inout wire signed reg integer real and nand or nor xor xnor not generate endgenerate genvar 
-    for if else case endcase default begin end assign initial always posedge """)
+"""module endmodule input output wire signed reg integer and nand or nor xor xnor not generate endgenerate genvar 
+    for if else case endcase default begin end assign  always posedge """)
 
 BRACKET2NAME = {
     '(': 'LPAREN',   ')': 'RPAREN',
