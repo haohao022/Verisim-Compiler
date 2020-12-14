@@ -127,9 +127,6 @@ class VeriSimParser(GenericParser):
         '''
         return AST('single',[args[0]])
 
-###dor
-
-
     def p_list_of_ports(self,args):
         '''
         ## 这里的port真的需要左右有中括号吗？ list_of_ports ::= port (COMMA [port])*
