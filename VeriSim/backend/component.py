@@ -89,7 +89,7 @@ class Comp(object):
         # dict: {Port.TAG: Port}
         self.ports = {}
 
-    def get_discription(self):
+    def get_description(self):
         return "{} {}".format(self.__name, self.__id)
 
     def to_xml(self):
@@ -123,6 +123,7 @@ class Port(object):
         self.width = width
         self.loc = loc
         self.name = name
+        self.owner = owner
         self.upper = None   # upperstream of the data stream
         self.down = []      # list of downstream of the data stream
 
@@ -138,13 +139,13 @@ class Port(object):
         # Linked ports should have the same width.
         assert (src.width == dst.width), \
             "Linked ports {}:{}, {}:{} have different width." \
-            .format(src_comp.get_discription(), src_port,
-                    dst_comp.get_discription(), dst_port)
+            .format(src_comp.get_description(), src_port,
+                    dst_comp.get_description(), dst_port)
         # Source port could have multiple downstream port, while destination
         # port have just one upperstream port.
         src.down.append(dst)
         assert (dst.upper == None), "Multiple upperstream port for {}:{}." \
-            .format(dst_comp.get_discription(), dst_port)
+            .format(dst_comp.get_description(), dst_port)
         dst.upper = src
 
 
