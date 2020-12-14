@@ -19,7 +19,7 @@ module adder(
 	assign {Overflow,Sum}=sum_s ;
 
 
-    always @(posedge Clk) begin
+  always @(posedge Clk) begin
 		if (En) begin
 			sum_s<=A+B;
 		end		

@@ -20,10 +20,13 @@ class ComponentSet :
 
     def __init__(self):
         self.rv = []
+        self.pv = []
 
     def append(self,node):
         self.rv.append(node)
 
+    def bind(self,link):
+        self.pv.append(link)
 
 class Interpret(GenericASTTraversal):
     
@@ -82,6 +85,9 @@ class Interpret(GenericASTTraversal):
         self.Comp_set = ComponentSet()
 
         self.SignTable = SignTable()
+
+        self.dictionary = {} ## used in ident map
+
         self.cur_kind = ''
         self.cur_name = ''
         self.cur_module =''
@@ -116,8 +122,15 @@ class Interpret(GenericASTTraversal):
         self.glo_en_flag =False
         self.enable_rv = []
 
+    def traverse(self,node):
+        self.preorder(node)
+        return self.Comp_set
+
     def check_is_decla(self) :
         return  self.dec_flag
+
+    def get_comp(self , name ):
+        return self.dictionary[name]
 
     def new_decla(self) :
         if not self.dec_flag  :
@@ -138,15 +151,19 @@ class Interpret(GenericASTTraversal):
         if self.cur_kind=='INPUT':
             new_pin = Pin(st.get_size() , False)
             self.Comp_set.append(new_pin)
+            self.dictionary[self.cur_name] = new_pin 
         elif self.cur_kind =='OUTPUT':
             new_pin = Pin(st.get_size(),False)
             self.Comp_set.append(new_pin)
+            self.dictionary[self.cur_name] = new_pin 
         
         #--------------
         ##----new reg
         new_reg = None
         if self.cur_type =='REG':
-            new_reg = Register(st.get_size(),11)
+            new_reg = Register(st.get_size(),"rising")
+            self.Comp_set.append(new_reg)
+            self.dictionary[self.cur_name] = new_reg
         ##todo: add trigger
         #----
 
@@ -158,9 +175,7 @@ class Interpret(GenericASTTraversal):
         pass
 
 
-    def traverse(self,node):
-        self.preorder(node)
-        return self.Comp_set
+   
 
     # Rules for interpreting nodes based on their AST node type
     def n_integer(self, node):
@@ -197,8 +212,11 @@ class Interpret(GenericASTTraversal):
         tmp_wire = self.gen_tmp()
 
         sum_width =0
+        tmp_width_list = []
         for item in self.tmp_rv :
             sum_width =sum_width + self.SignTable.getsize(item)
+            tmp_width_list.append(self.SignTable.getsize(item))
+        
         self.cur_msb = sum_width 
         self.cur_lsb = 0
         self.cur_kind = 'NORMAL'
@@ -209,8 +227,13 @@ class Interpret(GenericASTTraversal):
         self.new_decla()
 
         ##-- split
-        new_split = Splitter(tmp_wire, self.tmp_rv ,None  )
+        
+        tmp_width_list.reverse()
+        new_split = Splitter( tuple( tmp_width_list ) , sum_width ,True  )
+        
+        
         ##todo :splitter toward?
+
         ##-----------
 
         self.com_flag = False 
