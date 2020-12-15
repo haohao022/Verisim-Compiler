@@ -6,7 +6,8 @@ import os,sys
 os.chdir(sys.path[0])
 # from __future__ import print_function
 from spark_parser.scanner import GenericScanner
-from VeriSim_token import VeriSimToken
+
+from VeriSim_token import *
 
 
 import re
@@ -30,19 +31,25 @@ ENDMARKER = r''   # ctrl-d
 
 class VeriSimScanner(GenericScanner):
 
-    def error(self, s, pos):
+    def error(self, s ):
         """Show text and a carot under that. For example:
         x = 2y + z
             ^
         """
 
         print("Lexical error:")
-        print("%s" % s[:pos+10])  # + 10 for trailing context (尾部上下文)
-        print("%s^" % (" "*(pos-1)))
+        # print("%s" % s[:pos+10])  # + 10 for trailing context (尾部上下文)
+        print("Already scanned tokens are : \n")
         for t in self.rv: print(t)
         raise SystemExit
 
     def __init__(self):
+        ##- position counter
+        self.is_newline = True
+        self.lineno = 1
+        self.column = 0
+        ### ----------------
+            
         GenericScanner.__init__(self)
 
     def tokenize(self, string):
@@ -50,9 +57,16 @@ class VeriSimScanner(GenericScanner):
         GenericScanner.tokenize(self, string)
         return self.rv
 
-    def add_token(self, name, s):
-        t = VeriSimToken(name, s)
-        self.rv.append(t)
+    def add_token(self, name, s,is_newline=False):
+        self.column += len(s)
+        t = VeriSimToken(name, s, self.lineno, self.column)
+
+        if is_newline:
+            self.lineno += 1
+            self.column = 0
+        self.is_newline = is_newline
+        if name !='NEWLINE' :
+            self.rv.append(t)
 
     # The function names below begin with 't_'.
     # This indicates to GenericScanner that these routines
@@ -92,7 +106,7 @@ class VeriSimScanner(GenericScanner):
                 '^~':'xor_not'  , '~^': 'not_xor'  , '~|' : 'not_or' , '~&' : 'not_and' }
     #unary operator : + - ! ~ & ~& | ~| ^ ~^ ^~
     def t_op(self, s):
-        r'\+=|-=|\*=|/=|%=|&=|\|=|^=|<<=|>>=|\*\*|//=|==|<=|>=|<<|>>|[<>%^&\?+/=~\-\*]'
+        r'\+=|-=|\*=|/=|&=|\|=|^=|<<=|>>=|\*\*|//=|==|<=|>=|<<|>>|[<>^&\?+/=~\-\*]'
         #dormouse:他这里先添加的是单目运算符。把加减之类的也认为是单目运算符
         # 在处理 <= 这一符号的时候需要尤其注意
         # Operators need to be further classified since the grammar requires this
@@ -117,7 +131,7 @@ class VeriSimScanner(GenericScanner):
 
     def t_nl(self, s):
         r'\n'
-        # self.add_token('NEWLINE', s )
+        self.add_token('NEWLINE', s ,is_newline=True )
 
     def t_name(self, s):
         r'[A-Za-z_][A-Za-z_0-9]*'

@@ -15,7 +15,7 @@ from VeriSim_Scanner import VeriSimScanner, ENDMARKER
 from spark_parser.scanner import GenericScanner, GenericToken
 from spark_parser import GenericParser
 
-DEFAULT_DEBUG = {'rules': False, 'transition': False, 'reduce' : True,
+DEFAULT_DEBUG = {'rules': False, 'transition': False, 'reduce' : False,
                  'errorstack': 'full', 'context': False, 'dups': False}
 # class VeriSimParser(GenericASTBuilder):
 class VeriSimParser(GenericParser):
@@ -157,10 +157,16 @@ class VeriSimParser(GenericParser):
         if len(args) !=0:
             return AST('single',[args[2]] )
         pass
+    
+    def p_module_name(self,args):
+        '''
+        module_identifier ::= identifier 
+        '''
+        return AST('module_name',args[0])
 
     def p_ident_kind(self,args):
         '''
-        module_identifier ::= identifier 
+        
         port_identifier ::= identifier
         net_identifier ::= identifier 
         gate_instance_identifier ::= identifier 
@@ -391,7 +397,6 @@ class VeriSimParser(GenericParser):
         
         '''
 
-        #暂时不考虑args[2]
         if(args[1]!=None):
             return AST('plex',[args[0],args[1]] )
         else :
@@ -402,8 +407,7 @@ class VeriSimParser(GenericParser):
         dor_dim_and_exp ::= dimension+
         dor_dim_and_exp ::= IS_EQUAL expression
         '''
-        #todo:
-        ##dor: dont know how to resolve
+
         if len(args) == 1 :
             return AST('plex',[args[0]])
         else :
@@ -944,7 +948,7 @@ if __name__ == '__main__':
     #     for python2_stmts in (
     #             """return f()""",
     #             ):
-    #         print(python2_stmts)
+    #         print(python2_stmts)y
     #         print('-' * 30)
     #         ast = parse_VeriSim(python2_stmts + ENDMARKER,
     #                             start='translation_unit', show_tokens=False, check=True)
@@ -956,6 +960,6 @@ if __name__ == '__main__':
     src = open('adder.v')
     scan = VeriSimScanner()
     tokens = scan.tokenize(src.read() + ENDMARKER)
-    ast = parse_VeriSim(tokens, start='translation_unit', show_tokens=False, check=True)
+    ast = parse_VeriSim(tokens, start='translation_unit', show_tokens=False, check=False)
     print(ast)
-    print("DORMOUSE+==========+end")
+    print("DORMOUSE+==========parse +end")

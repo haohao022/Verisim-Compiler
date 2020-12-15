@@ -28,6 +28,12 @@ class ComponentSet :
     def bind(self,link):
         self.pv.append(link)
 
+    def __str__(self):
+        for item in self.rv :
+            print(item.__str__())
+        for link in self.pv :
+            print(link.__str__())
+
 class Interpret(GenericASTTraversal):
     
     tmp_wire_counter =0 
@@ -124,7 +130,7 @@ class Interpret(GenericASTTraversal):
 
     def traverse(self,node):
         self.preorder(node)
-        return self.Comp_set
+        return self.Comp_set ,self.dictionary
 
     def check_is_decla(self) :
         return  self.dec_flag
@@ -160,14 +166,14 @@ class Interpret(GenericASTTraversal):
         #--------------
         ##----new reg
         new_reg = None
-        if self.cur_type =='REG':
+        if self.wire_type =='REG':
             new_reg = Register(st.get_size(),"rising")
             self.Comp_set.append(new_reg)
             self.dictionary[self.cur_name] = new_reg
         ##todo: add trigger
         #----
 
-
+        self.wire_type = ''
         self.cur_msb = 0
         self.dec_flag = False
         self.sb_flag = False
@@ -230,8 +236,9 @@ class Interpret(GenericASTTraversal):
         
         tmp_width_list.reverse()
         new_split = Splitter( tuple( tmp_width_list ) , sum_width ,True  )
-        
-        
+        self.Comp_set.append(new_split) ## add splitter
+
+
         ##todo :splitter toward?
 
         ##-----------
@@ -426,7 +433,7 @@ if __name__ == '__main__':
     
     print("DORMOUSE+==========+end")
     sema=  Interpret(ast)
-    res = sema.traverse(ast)
+    res , _ = sema.traverse(ast)
 
     print("dormouse-semantics-end!")
     pass

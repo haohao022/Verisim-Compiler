@@ -95,6 +95,9 @@ class Comp(object):
     def to_xml(self):
         pass
 
+    def __str__(self):
+        return "Comp :  %s_%d "%(self.__name ,self.__id )   
+    ## add by dormouse : generate string 
 
 class Port(object):
     """
@@ -221,6 +224,8 @@ class Pin(Comp):
         # Create ports for Pin components.
         self.ports.setdefault("inout", Port(self, width))
 
+    def __str__(self):
+        return super(Pin,self).__str__()
 
 class Constant(Comp):
     """
