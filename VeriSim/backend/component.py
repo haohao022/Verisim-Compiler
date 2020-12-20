@@ -84,14 +84,14 @@ class Comp(object):
     def __init__(self, name, lib, loc=None):
         self.__id = Comp.__ID
         Comp.__ID += 1
-        self.__lib = lib
-        self.__name = name
+        self.lib = lib
+        self.name = name
         self.loc = loc
         # dict: {Port.TAG: Port}
         self.ports = {}
 
     def get_desc(self):
-        return "{}_{}".format(self.__name, self.__id)
+        return "{}_{}".format(self.name, self.__id)
 
     def get_downstream_comps(self):
         """
@@ -104,10 +104,12 @@ class Comp(object):
         return down
 
     def create_port(self, name: str, width: int, dir):
-        name = "{}_{}".format(self.get_desc(), name)
-        port = Port(owner=self, width=width, dir=dir, name=name)
+        port_name = "{}_{}".format(self.get_desc(), name)
+        port = Port(owner=self, width=width, dir=dir, name=port_name)
         self.ports.setdefault(name, port)
         
+    def get_port_list(self):
+        return list(self.ports.values())
 
     @abstractmethod
     def set_loc(self, loc: tuple):
@@ -185,10 +187,16 @@ class Port(object):
         self.loc = loc
 
     def get_loc(self):
-        pass
+        return self.loc
 
     def get_desc(self):
         return self.name
+
+    def is_out_port(self):
+        return self.dir == Port.Dir.OUTPUT
+
+    def get_width(self):
+        return self.width
 
 
 # Below are Comp.Lib.WIRING classes, including Splitter, Pin, Constant,
@@ -249,7 +257,7 @@ class Splitter(Comp):
             self.create_port(Port.Tag.OUT + str(i), fanout_tuple[i], out_dir)
 
 
-# TODO?: three state, pull behavior
+# TODO?: three state(), pull behavior
 class Pin(Comp):
     """
     Pin class.
@@ -276,6 +284,17 @@ class Pin(Comp):
     def set_loc(self, loc: tuple):
         self.loc = loc
         self.ports["inout"].set_loc(loc)
+
+    def to_xml(self):
+        xml = '<comp lib="{}" loc="{}" name="{}">\n' \
+            '  <a name="tristate" val="false"/>\n' \
+            '  <a name="facing" val="{}"/>\n' \
+            '  <a name="output" val="{}"/>\n' \
+            '  <a name="width" val="{}"/>\n' \
+            '</comp>\n' \
+            .format(self.lib, self.loc, self.name, self.facing, self.output,
+                    self.width)
+        return xml
 
 
 class Constant(Comp):

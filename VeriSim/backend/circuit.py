@@ -7,20 +7,55 @@ class Tunnel(Comp):
     Tunnel is used to combine two ports in a simple way.
     """
     
-    def __init__(self, width: int, label: str, output: bool, loc=None):
+    def __init__(self, width: int, label: str, is_out: bool, loc=None):
         """
         Parameter:
-        output set to true means the tunnel port is used as the source of a
+        is_out set to true means the tunnel port is used as the source of a
         data stream.
         """
         super(Tunnel, self).__init__("Tunnel", Comp.Lib.WIRING)
         self.width = width
         self.label = label
-        if output == True:
-            self.facing = Comp.Facing.EAST
-        else:
+        self.link_to_out_port = is_out
+        if is_out:
             self.facing = Comp.Facing.WEST
+        else:
+            self.facing = Comp.Facing.EAST
         self.loc = loc
+
+    def get_wire_to(self, loc):
+        x, y = loc
+        if self.link_to_out_port:
+            x_tunnel = x + 10
+        else:
+            x_tunnel = x - 10
+        self.loc = (x_tunnel, y)
+        return Wire(loc, (x_tunnel, y))
+
+    def to_xml(self):
+        xml = '<comp lib={} loc="{}" name="{}">\n' \
+            '  <a name="facing" val="{}"/>\n' \
+            '  <a name="label" val="{}"/>\n' \
+            '  <a name="width" val="{}">\n' \
+            '<comp>\n' \
+            .format(self.lib, self.loc, self.name, self.facing, self.label,
+                    self.width)
+        return xml
+
+
+class Wire(Comp):
+    """
+    Wire in logosim.
+    """
+
+    def __init__(self, src: tuple, dst: tuple):
+        super(Wire, self).__init__("Wire", Comp.Lib.WIRING)
+        self.__src = src
+        self.__dst = dst
+
+    def to_xml(self):
+        xml = '<wire from="{}" to="{}"/>\n'.format(self.__src, self.__dst)
+        return xml
 
 
 class Circuit(object):
@@ -29,10 +64,81 @@ class Circuit(object):
     """
     __BLOCK_SIZ = 100
     __ORIGIN = {"x": 100, "y": 100}
+    __HEADER = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' \
+        '<project source="2.7.1" version="1.0">\n' \
+        'This file is intended to be loaded by Logisim (http://www.cburch.com/logisim/).\n' \
+        '<lib desc="#Wiring" name="0">\n' \
+        '    <tool name="Splitter">\n' \
+        '      <a name="fanout" val="4"/>\n' \
+        '      <a name="incoming" val="4"/>\n' \
+        '    </tool>\n' \
+        '    <tool name="Tunnel">\n' \
+        '      <a name="width" val="32"/>\n' \
+        '    </tool>\n' \
+        '    <tool name="Constant">\n' \
+        '      <a name="width" val="32"/>\n' \
+        '      <a name="value" val="0xffffffff"/>\n' \
+        '    </tool>\n' \
+        '  </lib>\n' \
+        '  <lib desc="#Gates" name="1"/>\n' \
+        '  <lib desc="#Plexers" name="2"/>\n' \
+        '  <lib desc="#Arithmetic" name="3"/>\n' \
+        '  <lib desc="#Memory" name="4"/>\n' \
+        '  <lib desc="#I/O" name="5"/>\n' \
+        '  <lib desc="#Base" name="6">\n' \
+        '    <tool name="Text Tool">\n' \
+        '      <a name="text" val=""/>\n' \
+        '      <a name="font" val="SansSerif plain 12"/>\n' \
+        '      <a name="halign" val="center"/>\n' \
+        '      <a name="valign" val="base"/>\n' \
+        '    </tool>\n' \
+        '  </lib>\n' \
+        '  <main name="main"/>\n' \
+        '  <options>\n' \
+        '    <a name="gateUndefined" val="ignore"/>\n' \
+        '    <a name="simlimit" val="1000"/>\n' \
+        '    <a name="simrand" val="0"/>\n' \
+        '  </options>\n' \
+        '  <mappings>\n' \
+        '    <tool lib="6" map="Button2" name="Menu Tool"/>\n' \
+        '    <tool lib="6" map="Button3" name="Menu Tool"/>\n' \
+        '    <tool lib="6" map="Ctrl Button1" name="Menu Tool"/>\n' \
+        '  </mappings>\n' \
+        '  <toolbar>\n' \
+        '    <tool lib="6" name="Poke Tool"/>\n' \
+        '    <tool lib="6" name="Edit Tool"/>\n' \
+        '    <tool lib="6" name="Text Tool">\n' \
+        '      <a name="text" val=""/>\n' \
+        '      <a name="font" val="SansSerif plain 12"/>\n' \
+        '      <a name="halign" val="center"/>\n' \
+        '      <a name="valign" val="base"/>\n' \
+        '    </tool>\n' \
+        '    <sep/>\n' \
+        '    <tool lib="0" name="Pin">\n' \
+        '      <a name="tristate" val="false"/>\n' \
+        '    </tool>\n' \
+        '    <tool lib="0" name="Pin">\n' \
+        '      <a name="facing" val="west"/>\n' \
+        '      <a name="output" val="true"/>\n' \
+        '      <a name="labelloc" val="east"/>\n' \
+        '    </tool>\n' \
+        '    <tool lib="1" name="NOT Gate"/>\n' \
+        '    <tool lib="1" name="AND Gate"/>\n' \
+        '    <tool lib="1" name="OR Gate"/>\n' \
+        '  </toolbar>\n' \
+        '  <circuit name="main">\n' \
+        '    <a name="circuit" val="main"/>\n' \
+        '    <a name="clabel" val=""/>\n' \
+        '    <a name="clabelup" val="east"/>\n' \
+        '    <a name="clabelfont" val="SansSerif plain 12"/>\n'
+    __TAIL = '  </circuit>\n' \
+        '</project>\n'
 
     def __init__(self, inputs: list):
         self.inputs = inputs
         self.comps = []
+        self.wires = []
+        self.tunnels = []
 
     def wiring(self):
         pass
@@ -57,6 +163,18 @@ class Circuit(object):
         for i in range(len(comps)):
             x = (i // square) * Circuit.__BLOCK_SIZ + Circuit.__ORIGIN["x"]
             y = (i % square) * Circuit.__BLOCK_SIZ + Circuit.__ORIGIN["y"]
-            comps[i].set_loc((x, y))
-        # Link ports with tunnels.
+            comp = comps[i]
+            comp.set_loc((x, y))
+            # Link all ports of comp with tunnels.
+            for port in comp.get_port_list():
+                tunnel = Tunnel(port.get_width(), port.get_desc(),
+                                port.is_out_port())
+                wire = tunnel.get_wire_to(port.get_loc())
+                self.tunnels.append(tunnel)
+                self.wires.append(wire)
+
+    def write_to_circ(self, filename):
+        """
+        Write (wires, comps, tunnels) to .circ file.
+        """
         
