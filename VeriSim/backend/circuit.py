@@ -41,7 +41,7 @@ class Circuit(object):
         """
         Allocate position for components using tunnel strategy.
         Tunnel label determined according to source port. Let source port be 
-        src, then tunnel label would be named <src.owner.desc + src.name>.
+        src, then tunnel label would be named <src.get_desc()>.
         """
         # Put all the components into the list comps.
         comps = list(self.inputs)
