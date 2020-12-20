@@ -175,6 +175,13 @@ class Circuit(object):
 
     def write_to_circ(self, filename):
         """
-        Write (wires, comps, tunnels) to .circ file.
+        Write (wires, tunnels, comps) to .circ file.
         """
-        
+        with open(filename, "w") as f:
+            # Write header into .circ file
+            f.write(Circuit.__HEADER)
+            # Write (wires, tunnels, comps)
+            for comp in [*self.wires, *self.tunnels, *self.comps]:
+                f.write(comp.to_xml())
+            # Write tail into .circ file
+            f.write(Circuit.__TAIL)

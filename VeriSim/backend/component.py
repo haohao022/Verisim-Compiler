@@ -426,6 +426,16 @@ class GeneralGate(Comp):
                 self.ports[Port.Tag.IN + str(self.inputs - 1 - i)] \
                     .set_loc((x, loc[1] + 10 * (offset - i)))
 
+    def to_xml(self):
+        xml = '<comp lib="{}" loc="{}" name="{}">\n' \
+            '  <a name="facing" val="{}"/>\n' \
+            '  <a name="width" val="{}"/>\n' \
+            '  <a name="inputs" val="{}"/>\n' \
+            '</comp>\n' \
+            .format(self.lib, self.loc, self.name, self.facing, self.width,
+                    self.inputs)
+        return xml
+
 
 class And(GeneralGate):
     """
