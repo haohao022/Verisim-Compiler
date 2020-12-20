@@ -103,6 +103,11 @@ class Comp(object):
                 down.add(down_port.owner)
         return down
 
+    def create_port(self, name: str, width: int, dir):
+        port = Port(owner=self, width=width, dir=dir, name=name)
+        self.ports.setdefault(name, port)
+        
+
     @abstractmethod
     def set_loc(self, loc: tuple):
         """
@@ -143,7 +148,7 @@ class Port(object):
         INPUT = "input port"
         OUTPUT = "output port"
 
-    def __init__(self, owner: Comp, width: int, dir: Dir, loc=None, name=None):
+    def __init__(self, owner: Comp, width: int, dir: Dir, name=None, loc=None):
         assert (width >= 0 and width <= 32), \
                "Port width {} out of range.".format(width)
         self.owner = owner

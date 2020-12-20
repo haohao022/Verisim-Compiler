@@ -32,6 +32,7 @@ class Circuit(object):
 
     def __init__(self, inputs: list):
         self.inputs = inputs
+        self.comps = []
 
     def wiring(self):
         pass
@@ -39,6 +40,8 @@ class Circuit(object):
     def locator_tunnel_strategy(self):
         """
         Allocate position for components using tunnel strategy.
+        Tunnel label determined according to source port. Let source port be 
+        src, then tunnel label would be named <src.owner.desc + src.name>.
         """
         # Put all the components into the list comps.
         comps = list(self.inputs)
@@ -48,9 +51,12 @@ class Circuit(object):
             for elem in downs:
                 if elem not in comps:
                     comps.append(elem)
+        self.comps = comps
         # Distribute components to the canvas.
         square = ceil(sqrt(len(comps)))
         for i in range(len(comps)):
             x = (i // square) * Circuit.__BLOCK_SIZ + Circuit.__ORIGIN["x"]
             y = (i % square) * Circuit.__BLOCK_SIZ + Circuit.__ORIGIN["y"]
-            comps[i].set_loc
+            comps[i].set_loc((x, y))
+        # Link ports with tunnels.
+        
