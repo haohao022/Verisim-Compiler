@@ -50,8 +50,7 @@ class Circuit(object):
                     comps.append(elem)
         # Distribute components to the canvas.
         square = ceil(sqrt(len(comps)))
-        comps_loc = dict()
         for i in range(len(comps)):
-            x = (i // square) * Circuit.__BLOCK_SIZ
-            y = (i % square) * Circuit.__BLOCK_SIZ
-            comps_loc.setdefault(comps[i], (x, y))
+            x = (i // square) * Circuit.__BLOCK_SIZ + Circuit.__ORIGIN["x"]
+            y = (i % square) * Circuit.__BLOCK_SIZ + Circuit.__ORIGIN["y"]
+            comps[i].set_loc

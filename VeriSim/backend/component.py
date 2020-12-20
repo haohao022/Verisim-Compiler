@@ -1,5 +1,6 @@
 from math import ceil
 from math import log2
+from abc import abstractmethod
 
 
 class Comp(object):
@@ -84,8 +85,8 @@ class Comp(object):
         self.__id = Comp.__ID
         Comp.__ID += 1
         self.__lib = lib
-        self.__loc = loc
         self.__name = name
+        self.loc = loc
         # dict: {Port.TAG: Port}
         self.ports = {}
 
@@ -102,7 +103,11 @@ class Comp(object):
                 down.add(down_port.owner)
         return down
 
+    @abstractmethod
     def set_loc(self, loc: tuple):
+        """
+        Set location to component and ports.
+        """
         pass
 
     def to_xml(self):
@@ -171,7 +176,7 @@ class Port(object):
         dst.upper = src
 
     def set_loc(self, loc: tuple):
-        pass
+        self.loc = loc
 
     def get_loc(self):
         pass
@@ -182,7 +187,7 @@ class Port(object):
 class Splitter(Comp):
     """
     Splitter class.
-    Ports: combined, out0 ~ outN(N = len(fanout))
+    Ports: combined, out0 ~ out(N-1)(N = len(fanout))
     """
 
     class Appearance(object):
@@ -259,6 +264,10 @@ class Pin(Comp):
         else:
             inout_dir = Port.Dir.INPUT
         self.ports.setdefault("inout", Port(self, width, inout_dir))
+
+    def set_loc(self, loc: tuple):
+        self.loc = loc
+        self.ports["inout"].set_loc(loc)
 
 
 class Constant(Comp):
@@ -349,7 +358,7 @@ class GeneralGate(Comp):
     Basic template for gates. It supports three or more inputs.
     This class is the base class for And, Or, Nand, Nor, Xor, Xnor,
     OddParity, EvenParity
-    Ports: in0 ~ inN(N = inputs), out
+    Ports: in0 ~ in(N-1)(N = inputs), out
     """
 
     # Three options for size of such gate:
@@ -368,6 +377,31 @@ class GeneralGate(Comp):
                                   Port(self, width, Port.Dir.INPUT))
         self.ports.setdefault(Port.Tag.OUT, 
                               Port(self, width, Port.Dir.OUTPUT))
+
+    def set_loc(self, loc: tuple):
+        self.loc = loc
+        assert (self.size == Comp.GateSize.S50), \
+               "Gatesize should be S50, hasn't support other size yet, " \
+               "Current size is {}.".format(self.size)
+        # Set location for ports.
+        self.ports[Port.Tag.OUT].set_loc(loc)
+        x = loc[0] - 50
+        if self.inputs < 5:
+            self.ports[Port.Tag.IN + "0"].set_loc((x, loc[1] - 20))
+            self.ports[Port.Tag.IN + str(self.inputs - 1)] \
+                .set_loc((x, loc[1] + 20))
+            if self.inputs == 3:
+                self.ports[Port.Tag.IN + "1"].set_loc((x, loc[1]))
+            if self.inputs == 4:
+                self.ports[Port.Tag.IN + "1"].set_loc((x, loc[1] - 10))
+                self.ports[Port.Tag.IN + "2"].set_loc((x, loc[1] + 10))
+        else:
+            offset = self.inputs // 2
+            for i in range(offset + 1):
+                self.ports[Port.Tag.IN + str(i)] \
+                    .set_loc((x, loc[1] - 10 * (offset - i)))
+                self.ports[Port.Tag.IN + str(self.inputs - 1 - i)] \
+                    .set_loc((x, loc[1] + 10 * (offset - i)))
 
 
 class And(GeneralGate):
@@ -457,7 +491,7 @@ class EvenParity(GeneralGate):
 class Multiplexer(Comp):
     """
     Multiplexer class.
-    Ports: in0 ~ inN(N = 2^select), out, sel, en
+    Ports: in0 ~ in(N-1)(N = 2^select), out, sel, en
     """
 
     def __init__(self, width, select: int, enable=False,
@@ -488,7 +522,7 @@ class Multiplexer(Comp):
 class Demultiplexer(Comp):
     """
     Demultiplexer class.
-    Ports: in, out0 ~ outN(N = 2^select), sel, en
+    Ports: in, out0 ~ out(N-1)(N = 2^select), sel, en
     """
 
     def __init__(self, width, select, enable=False,
@@ -519,7 +553,7 @@ class Demultiplexer(Comp):
 class Decoder(Comp):
     """
     Decoder class.
-    Ports: sel, out0 ~ outN(N = 2^select), en
+    Ports: sel, out0 ~ out(N-1)(N = 2^select), en
     """
 
     def __init__(self, select, enable=False, selloc=Comp.SelectLoc.BOTTOM_LEFT,
