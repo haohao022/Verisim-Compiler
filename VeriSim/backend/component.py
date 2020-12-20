@@ -198,6 +198,9 @@ class Port(object):
     def get_width(self):
         return self.width
 
+    def get_upper(self):
+        return self.upper
+
 
 # Below are Comp.Lib.WIRING classes, including Splitter, Pin, Constant,
 # Bit Extender.
@@ -260,7 +263,7 @@ class Splitter(Comp):
 # TODO?: three state(), pull behavior
 class Pin(Comp):
     """
-    Pin class.
+    Pin class. "output = False" indicate a input component.
     Ports: inout.
     """
 
@@ -270,15 +273,15 @@ class Pin(Comp):
         self.output = output
         if facing != None:
             self.facing = facing
-        elif output == False:
+        elif output:
             self.facing = Comp.Facing.WEST
         else:
             self.facing = Comp.Facing.EAST
         # Create ports for Pin components.
-        if output == True:
-            inout_dir = Port.Dir.OUTPUT
-        else:
+        if output:
             inout_dir = Port.Dir.INPUT
+        else:
+            inout_dir = Port.Dir.OUTPUT
         self.create_port("inout", width, inout_dir)
 
     def set_loc(self, loc: tuple):
