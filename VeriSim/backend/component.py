@@ -89,8 +89,21 @@ class Comp(object):
         # dict: {Port.TAG: Port}
         self.ports = {}
 
-    def get_description(self):
+    def get_desc(self):
         return "{} {}".format(self.__name, self.__id)
+
+    def get_downstream_comps(self):
+        """
+        return set of downstream components
+        """
+        down = set()
+        for self_port in self.ports.values():
+            for down_port in self_port.down:
+                down.add(down_port.owner)
+        return down
+
+    def set_loc(self, loc: tuple):
+        pass
 
     def to_xml(self):
         pass
@@ -100,7 +113,8 @@ class Port(object):
     """
     Each instance of this class represents a port on the components of the
     circuit.
-    The value of width of the port should be included in [1, 2, ..., 32]
+    "width" of the port should be in [1, 2, ..., 32].
+    "dir" indicates direction of the port, True means input, False means output.
     """
 
     class Tag(object):
@@ -117,13 +131,21 @@ class Port(object):
         CIN = "cin"         # carry in port
         COUT = "cout"       # carry out port
 
-    def __init__(self, owner: Comp, width: int, loc=None, name=None):
+    class Dir(object):
+        """
+        Direction of the port, including input and output direction.
+        """
+        INPUT = "input port"
+        OUTPUT = "output port"
+
+    def __init__(self, owner: Comp, width: int, dir: Dir, loc=None, name=None):
         assert (width >= 0 and width <= 32), \
                "Port width {} out of range.".format(width)
+        self.owner = owner
         self.width = width
+        self.dir = dir
         self.loc = loc
         self.name = name
-        self.owner = owner
         self.upper = None   # upperstream of the data stream
         self.down = []      # list of downstream of the data stream
 
@@ -139,14 +161,20 @@ class Port(object):
         # Linked ports should have the same width.
         assert (src.width == dst.width), \
             "Linked ports {}:{}, {}:{} have different width." \
-            .format(src_comp.get_description(), src_port,
-                    dst_comp.get_description(), dst_port)
+            .format(src_comp.get_desc(), src_port,
+                    dst_comp.get_desc(), dst_port)
         # Source port could have multiple downstream port, while destination
         # port have just one upperstream port.
         src.down.append(dst)
         assert (dst.upper == None), "Multiple upperstream port for {}:{}." \
-            .format(dst_comp.get_description(), dst_port)
+            .format(dst_comp.get_desc(), dst_port)
         dst.upper = src
+
+    def set_loc(self, loc: tuple):
+        pass
+
+    def get_loc(self):
+        pass
 
 
 # Below are Comp.Lib.WIRING classes, including Splitter, Pin, Constant,
@@ -196,9 +224,16 @@ class Splitter(Comp):
             self.appear = Splitter.Appearance.RIGHT_HANDED
             self.facing = Comp.Facing.WEST
         # Create ports for Splitter components.
-        self.ports.setdefault("combined", Port(self, incoming))
+        # If the component is used as combiner, set "combine" port direction
+        # to OUTPUT, otherwise set it to INPUT.
+        if combine == True:
+            combine_dir, out_dir = Port.Dir.OUTPUT, Port.Dir.INPUT
+        else:
+            combine_dir, out_dir = Port.Dir.INPUT, Port.Dir.OUTPUT
+        self.ports.setdefault("combined", Port(self, incoming, combine_dir))
         for i in range(self.fanout):
-            self.ports.setdefault(Port.Tag.OUT + str(i), Port(self, fanout_tuple[i]))
+            self.ports.setdefault(Port.Tag.OUT + str(i),
+                                  Port(self, fanout_tuple[i], out_dir))
 
 
 # TODO?: three state, pull behavior
@@ -208,7 +243,7 @@ class Pin(Comp):
     Ports: inout.
     """
 
-    def __init__(self, width, output:bool, facing=None):
+    def __init__(self, width, output: bool, facing=None):
         super(Pin, self).__init__(Comp.Name.PIN, Comp.Lib.WIRING)
         self.width = width
         self.output = output
@@ -219,7 +254,11 @@ class Pin(Comp):
         else:
             self.facing = Comp.Facing.EAST
         # Create ports for Pin components.
-        self.ports.setdefault("inout", Port(self, width))
+        if output == True:
+            inout_dir = Port.Dir.OUTPUT
+        else:
+            inout_dir = Port.Dir.INPUT
+        self.ports.setdefault("inout", Port(self, width, inout_dir))
 
 
 class Constant(Comp):
@@ -249,17 +288,7 @@ class Constant(Comp):
         self.width = width
         self.value = value
         # Create ports for Constant components.
-        self.ports.setdefault(Port.Tag.OUT, Port(self, width))
-
-    def __check_consistency(self):
-        """
-        Check if a binary data with such width have the ability to represent
-        the value, so this should be called after the width and value is set.
-        """
-        floor = - pow(2, self.width - 1)
-        ceiling = pow(2, self.width) - 1
-        if self.value < floor or self.value > ceiling:
-            raise ValueError()
+        self.ports.setdefault(Port.Tag.OUT, Port(self, width, Port.Dir.OUTPUT))
 
 
 class BitExtender(Comp):
@@ -285,10 +314,12 @@ class BitExtender(Comp):
         self.in_width = in_width
         self.out_width = out_width
         # Create ports for BitExtender components.
-        self.ports.setdefault(Port.Tag.IN, Port(self, in_width))
-        self.ports.setdefault(Port.Tag.OUT, Port(self, out_width))
+        self.ports.setdefault(Port.Tag.IN, 
+                              Port(self, in_width, Port.Dir.INPUT))
+        self.ports.setdefault(Port.Tag.OUT, 
+                              Port(self, out_width, Port.Dir.OUTPUT))
         if type == BitExtender.Type.INPUT:
-            self.ports.setdefault("prefix", Port(self, 1))
+            self.ports.setdefault("prefix", Port(self, 1, Port.Dir.INPUT))
 
 
 # Below are Comp.Lib.GATES classes, including NOT, AND, OR, NAND, NOR, XOR,
@@ -308,15 +339,14 @@ class Not(Comp):
         self.width = width
         self.size = size
         self.facing = facing
-        self.ports.setdefault(Port.Tag.IN, Port(self, width))
-        self.ports.setdefault(Port.Tag.OUT, Port(self, width))
+        self.ports.setdefault(Port.Tag.IN, Port(self, width, Port.Dir.INPUT))
+        self.ports.setdefault(Port.Tag.OUT, Port(self, width, Port.Dir.OUTPUT))
 
 
 # TODO?: output vlaue(01, 0Z, Z1), negate
-class TwoOperandGateShape(Comp):
+class GeneralGate(Comp):
     """
-    Basic template for gates. It supports three or more inputs though it is
-    named TwoOperandGateShape.
+    Basic template for gates. It supports three or more inputs.
     This class is the base class for And, Or, Nand, Nor, Xor, Xnor,
     OddParity, EvenParity
     Ports: in0 ~ inN(N = inputs), out
@@ -327,18 +357,20 @@ class TwoOperandGateShape(Comp):
     # The size of such gates is often set to medium(50).
     def __init__(self, name, width, inputs: int, size=Comp.GateSize.S50,
                  facing=Comp.Facing.EAST):
-        super(TwoOperandGateShape, self).__init__(name, Comp.Lib.GATES)
+        super(GeneralGate, self).__init__(name, Comp.Lib.GATES)
         self.width = width
         self.inputs = inputs
         self.size = size
         self.facing = facing
         # Create ports for two-operand gates
         for i in range(inputs):
-            self.ports.setdefault(Port.Tag.IN + str(i), Port(self, width))
-        self.ports.setdefault(Port.Tag.OUT, Port(self, width))
+            self.ports.setdefault(Port.Tag.IN + str(i),
+                                  Port(self, width, Port.Dir.INPUT))
+        self.ports.setdefault(Port.Tag.OUT, 
+                              Port(self, width, Port.Dir.OUTPUT))
 
 
-class And(TwoOperandGateShape):
+class And(GeneralGate):
     """
     AND Gate class.
     """
@@ -348,7 +380,7 @@ class And(TwoOperandGateShape):
         super(And, self).__init__(Comp.Name.AND, width, inputs, size, facing)
 
 
-class Or(TwoOperandGateShape):
+class Or(GeneralGate):
     """
     OR Gate class.
     """
@@ -358,7 +390,7 @@ class Or(TwoOperandGateShape):
         super(Or, self).__init__(Comp.Name.OR, width, inputs, size, facing)
 
 
-class Nand(TwoOperandGateShape):
+class Nand(GeneralGate):
     """
     NAND Gate class.
     """
@@ -368,7 +400,7 @@ class Nand(TwoOperandGateShape):
         super(Nand, self).__init__(Comp.Name.NAND, width, inputs, size, facing)
 
 
-class Nor(TwoOperandGateShape):
+class Nor(GeneralGate):
     """
     NOR Gate class.
     """
@@ -378,7 +410,7 @@ class Nor(TwoOperandGateShape):
         super(Nor, self).__init__(Comp.Name.NOR, width, inputs, size, facing)
 
 
-class Xor(TwoOperandGateShape):
+class Xor(GeneralGate):
     """
     OR Gate class.
     """
@@ -388,7 +420,7 @@ class Xor(TwoOperandGateShape):
         super(Xor, self).__init__(Comp.Name.XOR, width, inputs, size, facing)
 
 
-class Xnor(TwoOperandGateShape):
+class Xnor(GeneralGate):
     """
     XNOR Gate class.
     """
@@ -398,7 +430,7 @@ class Xnor(TwoOperandGateShape):
         super(Xnor, self).__init__(Comp.Name.XNOR, width, inputs, size, facing)
 
 
-class OddParity(TwoOperandGateShape):
+class OddParity(GeneralGate):
     """
     Odd Parity Gate class.
     """
@@ -409,7 +441,7 @@ class OddParity(TwoOperandGateShape):
                                   width, inputs, size, facing)
 
 
-class EvenParity(TwoOperandGateShape):
+class EvenParity(GeneralGate):
     """
     Even Parity Gate class.
     """
@@ -445,11 +477,12 @@ class Multiplexer(Comp):
         self.facing = facing
         # Create ports for Multiplexer components.
         for i in range(pow(2, select)):
-            self.ports.setdefault(Port.Tag.IN + str(i), Port(self, width))
-        self.ports.setdefault(Port.Tag.OUT, Port(self, width))
-        self.ports.setdefault(Port.Tag.SEL, Port(self, select))
+            self.ports.setdefault(Port.Tag.IN + str(i),
+                                  Port(self, width, Port.Dir.INPUT))
+        self.ports.setdefault(Port.Tag.OUT, Port(self, width, Port.Dir.OUTPUT))
+        self.ports.setdefault(Port.Tag.SEL, Port(self, select, Port.Dir.INPUT))
         if enable == True:
-            self.ports.setdefault(Port.Tag.EN, Port(self, 1))
+            self.ports.setdefault(Port.Tag.EN, Port(self, 1, Port.Dir.INPUT))
 
 
 class Demultiplexer(Comp):
@@ -474,12 +507,13 @@ class Demultiplexer(Comp):
         self.selloc = selloc
         self.facing = facing
         # Create ports for Demultiplexer components.
-        self.ports.setdefault(Port.Tag.IN, Port(self, width))
+        self.ports.setdefault(Port.Tag.IN, Port(self, width, Port.Dir.INPUT))
         for i in range(pow(2, select)):
-            self.ports.setdefault(Port.Tag.OUT + str(i), Port(self, width))
-        self.ports.setdefault(Port.Tag.SEL, Port(self, select))
+            self.ports.setdefault(Port.Tag.OUT + str(i),
+                                  Port(self, width, Port.Dir.OUTPUT))
+        self.ports.setdefault(Port.Tag.SEL, Port(self, select, Port.Dir.INPUT))
         if enable == True:
-            self.ports.setdefault(Port.Tag.EN, Port(self, 1))
+            self.ports.setdefault(Port.Tag.EN, Port(self, 1, Port.Dir.INPUT))
 
 
 class Decoder(Comp):
@@ -501,11 +535,12 @@ class Decoder(Comp):
         self.selloc = selloc
         self.facing = facing
         # Create ports for Decoder components.
-        self.ports.setdefault(Port.Tag.SEL, Port(self, select))
+        self.ports.setdefault(Port.Tag.SEL, Port(self, select, Port.Dir.INPUT))
         for i in range(pow(2, select)):
-            self.ports.setdefault(Port.Tag.OUT + str(i), Port(self, 1))
+            self.ports.setdefault(Port.Tag.OUT + str(i),
+                                  Port(self, 1, Port.Dir.OUTPUT))
         if enable == True:
-            self.ports.setdefault(Port.Tag.EN, Port(self, 1))
+            self.ports.setdefault(Port.Tag.EN, Port(self, 1, Port.Dir.INPUT))
 
 
 class BitSelector(Comp):
@@ -526,9 +561,9 @@ class BitSelector(Comp):
         self.width = width
         self.group = group
         # Create ports for BitSelector components.
-        self.ports.setdefault(Port.Tag.IN, Port(self, width))
-        self.ports.setdefault(Port.Tag.OUT, Port(self, group))
-        self.ports.setdefault(Port.Tag.SEL, Port(self, select))
+        self.ports.setdefault(Port.Tag.IN, Port(self, width, Port.Dir.INPUT))
+        self.ports.setdefault(Port.Tag.OUT, Port(self, group, Port.Dir.OUTPUT))
+        self.ports.setdefault(Port.Tag.SEL, Port(self, select, Port.Dir.INPUT))
 
 
 # Below are Comp.Lib.ARITHMETIC classes, including Adder, Subtractor, 
@@ -547,9 +582,12 @@ class ArithmeticShape(Comp):
         self.width = width
         # Create general ports for +, -, *, /.
         if auto_port == True:
-            self.ports.setdefault(Port.Tag.IN + "1", Port(self, width))
-            self.ports.setdefault(Port.Tag.IN + "2", Port(self, width))
-            self.ports.setdefault(Port.Tag.OUT, Port(self, width))
+            self.ports.setdefault(Port.Tag.IN + "1",
+                                  Port(self, width, Port.Dir.INPUT))
+            self.ports.setdefault(Port.Tag.IN + "2",
+                                  Port(self, width, Port.Dir.INPUT))
+            self.ports.setdefault(Port.Tag.OUT,
+                                  Port(self, width, Port.Dir.OUTPUT))
 
 class Adder(ArithmeticShape):
     """
@@ -561,8 +599,8 @@ class Adder(ArithmeticShape):
         super(Adder, self).__init__(width, Comp.Name.ADDER, auto_port=True)
         # Create ports for Adder components part of which is created in the
         # ArithmeticShape initializer.
-        self.ports.setdefault(Port.Tag.CIN, Port(self, 1))
-        self.ports.setdefault(Port.Tag.COUT, Port(self, 1))
+        self.ports.setdefault(Port.Tag.CIN, Port(self, 1, Port.Dir.INPUT))
+        self.ports.setdefault(Port.Tag.COUT, Port(self, 1, Port.Dir.OUTPUT))
         
 
 class Subtractor(ArithmeticShape):
@@ -576,8 +614,8 @@ class Subtractor(ArithmeticShape):
                                          auto_port=True)
         # Create ports for Subtractor components part of which is created in 
         # the ArithmeticShape initializer.
-        self.ports.setdefault(Port.Tag.CIN, Port(self, 1))
-        self.ports.setdefault(Port.Tag.COUT, Port(self, 1))
+        self.ports.setdefault(Port.Tag.CIN, Port(self, 1, Port.Dir.INPUT))
+        self.ports.setdefault(Port.Tag.COUT, Port(self, 1, Port.Dir.OUTPUT))
 
 
 class Multiplier(ArithmeticShape):
@@ -591,8 +629,8 @@ class Multiplier(ArithmeticShape):
                                          auto_port=True)
         # Create ports for Multiplier components part of which is created in 
         # the ArithmeticShape initializer.
-        self.ports.setdefault(Port.Tag.CIN, Port(self, width))
-        self.ports.setdefault(Port.Tag.COUT, Port(self, width))
+        self.ports.setdefault(Port.Tag.CIN, Port(self, width, Port.Dir.INPUT))
+        self.ports.setdefault(Port.Tag.COUT, Port(self, width, Port.Dir.OUTPUT))
 
 
 class Divider(ArithmeticShape):
@@ -605,8 +643,8 @@ class Divider(ArithmeticShape):
         super(Divider, self).__init__(width, Comp.Name.DIVIDER, auto_port=True)
         # Create ports for Divider components part of which is created in 
         # the ArithmeticShape initializer.
-        self.ports.setdefault(Port.Tag.CIN, Port(self, width))
-        self.ports.setdefault(Port.Tag.COUT, Port(self, width))
+        self.ports.setdefault(Port.Tag.CIN, Port(self, width, Port.Dir.INPUT))
+        self.ports.setdefault(Port.Tag.COUT, Port(self, width, Port.Dir.OUTPUT))
 
 
 class Comparator(ArithmeticShape):
@@ -627,11 +665,16 @@ class Comparator(ArithmeticShape):
         super(Comparator, self).__init__(width, Comp.Name.COMPARATOR)
         self.mode = mode
         # Create ports for Comparator components.
-        self.ports.setdefault(Port.Tag.IN + "A", Port(self, width))
-        self.ports.setdefault(Port.Tag.IN + "A", Port(self, width))
-        self.ports.setdefault(Port.Tag.OUT + "g", Port(self, 1))
-        self.ports.setdefault(Port.Tag.OUT + "e", Port(self, 1))
-        self.ports.setdefault(Port.Tag.OUT + "l", Port(self, 1))
+        self.ports.setdefault(Port.Tag.IN + "A",
+                              Port(self, width, Port.Dir.INPUT))
+        self.ports.setdefault(Port.Tag.IN + "A",
+                              Port(self, width, Port.Dir.INPUT))
+        self.ports.setdefault(Port.Tag.OUT + "g",
+                              Port(self, 1, Port.Dir.OUTPUT))
+        self.ports.setdefault(Port.Tag.OUT + "e",
+                              Port(self, 1, Port.Dir.OUTPUT))
+        self.ports.setdefault(Port.Tag.OUT + "l",
+                              Port(self, 1, Port.Dir.OUTPUT))
 
 
 class Shifter(ArithmeticShape):
@@ -655,10 +698,12 @@ class Shifter(ArithmeticShape):
         # Set shift mode for the Shifter, not shift distance.
         self.shift = shift
         # Create ports for Shifter components.
-        self.ports.setdefault(Port.Tag.IN + "1", Port(self, width))
+        self.ports.setdefault(Port.Tag.IN + "1",
+                              Port(self, width, Port.Dir.INPUT))
         shift_dis_width = ceil(log2(width))
-        self.ports.setdefault(Port.Tag.IN + "2", Port(self, shift_dis_width))
-        self.ports.setdefault(Port.Tag.OUT, Port(self, width))
+        self.ports.setdefault(Port.Tag.IN + "2",
+                              Port(self, shift_dis_width, Port.Dir.INPUT))
+        self.ports.setdefault(Port.Tag.OUT, Port(self, width, Port.Dir.OUTPUT))
 
 
 # Below are Comp.Lib.MEMORY classes, including Register.
@@ -683,8 +728,8 @@ class Register(Comp):
         self.width = width
         self.trigger = trigger
         # Create ports for Register components.
-        self.ports.setdefault(Port.Tag.IN, Port(self, width))
-        self.ports.setdefault(Port.Tag.OUT, Port(self, width))
-        self.ports.setdefault(Port.Tag.EN, Port(self, 1))
-        self.ports.setdefault("clk", Port(self, 1))
-        self.ports.setdefault("clr", Port(self, 1))
+        self.ports.setdefault(Port.Tag.IN, Port(self, width, Port.Dir.INPUT))
+        self.ports.setdefault(Port.Tag.OUT, Port(self, width, Port.Dir.OUTPUT))
+        self.ports.setdefault(Port.Tag.EN, Port(self, 1, Port.Dir.INPUT))
+        self.ports.setdefault("clk", Port(self, 1, Port.Dir.INPUT))
+        self.ports.setdefault("clr", Port(self, 1, Port.Dir.INPUT))
